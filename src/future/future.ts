@@ -3,7 +3,7 @@ import {
 } from "rxjs";
 import {distinctUntilChanged, filter, first, map} from "rxjs/operators";
 import {FutureConfig} from "./future-config";
-import {FutureError, FutureLoading, FutureUnion, FutureValue} from "./future-types";
+import {FutureEmpty, FutureError, FutureLoading, FutureUnion, FutureValue} from "./future-types";
 import {cache} from "../operators/cache";
 
 export class Future<T> implements Subscribable<FutureUnion<T>> {
@@ -62,6 +62,10 @@ export class Future<T> implements Subscribable<FutureUnion<T>> {
   data$: Observable<T | undefined>;
   /** True if the Future is in the Loading state, otherwise false */
   loading$: Observable<boolean>;
+  /** True if the Future is in the Loading or Empty state, otherwise false */
+  waiting$: Observable<boolean>;
+  /** True if the Future is in the Empty state, otherwise false */
+  empty$: Observable<boolean>;
   /** True if the Future is in the Error state, otherwise false */
   failed$: Observable<boolean>;
   /** The error given if the Future is in the Error state, otherwise undefined */
@@ -149,9 +153,9 @@ export class Future<T> implements Subscribable<FutureUnion<T>> {
       // Map future state
       sub.add(combined.pipe(
         map(([value, loading, error]) => {
-          if (loading) return new FutureLoading(true, value ?? undefined);
+          if (loading) return new FutureLoading(value ?? undefined);
           if (error) return new FutureError(error, value ?? undefined);
-          if (value === undefined) return new FutureLoading<NonNullable<T>>(false);
+          if (value === undefined) return new FutureEmpty();
           return new FutureValue(value!);
         }),
         distinctUntilChanged((a, b) => !Future.stateChanged(a, b)),
@@ -163,6 +167,8 @@ export class Future<T> implements Subscribable<FutureUnion<T>> {
 
     this.data$ = this.state$.pipe(map(x => x instanceof FutureValue ? x.value : undefined));
     this.loading$ = this.state$.pipe(map(x => x instanceof FutureLoading));
+    this.empty$ = this.state$.pipe(map(x => x instanceof FutureEmpty));
+    this.waiting$ = this.state$.pipe(map(x => x instanceof FutureLoading || x instanceof FutureEmpty));
     this.failed$ = this.state$.pipe(map(x => x instanceof FutureError));
     this.error$ = this.state$.pipe(map(x => x instanceof FutureError ? x.error ?? new Error() : undefined));
   }
@@ -175,6 +181,10 @@ export class Future<T> implements Subscribable<FutureUnion<T>> {
    */
   private static stateChanged<T>(oldState: FutureUnion<T>, newState: FutureUnion<T>) {
 
+    if (newState instanceof FutureEmpty) {
+      return oldState !== FutureEmpty;
+    }
+
     if (newState instanceof FutureValue) {
       if (oldState instanceof FutureValue) {
         return oldState.value !== newState.value
@@ -184,7 +194,7 @@ export class Future<T> implements Subscribable<FutureUnion<T>> {
 
     if (newState instanceof FutureLoading) {
       if (oldState instanceof FutureLoading) {
-        return oldState.loading !== newState.loading || oldState.value !== newState.value
+        return oldState.value !== newState.value
       }
       return true;
     }

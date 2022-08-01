@@ -1,6 +1,6 @@
 
 export class FutureLoading<T> {
-  constructor(public loading: boolean, public value?: T) {
+  constructor(public value?: T) {
   }
 }
 
@@ -14,4 +14,8 @@ export class FutureError<T> {
   }
 }
 
-export type FutureUnion<T> = FutureLoading<T> | FutureError<T> | FutureValue<T>;
+export class FutureEmpty {
+  constructor() { }
+}
+
+export type FutureUnion<T> = FutureLoading<T> | FutureError<T> | FutureValue<T> | FutureEmpty;
