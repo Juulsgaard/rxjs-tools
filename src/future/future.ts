@@ -15,12 +15,35 @@ export class Future<T> implements Subscribable<FutureUnion<T>> {
    * @param error$ - The error state
    * @constructor
    */
-  static New<T>(value$: Observable<T>, loading$?: Observable<boolean>, error$?: Observable<boolean | Error | string | undefined>): FutureConfig<T, T> {
+  static Configure<T>(
+    value$: Observable<T>,
+    loading$?: Observable<boolean>,
+    error$?: Observable<boolean | Error | string | undefined>
+  ): FutureConfig<T, T> {
     return new FutureConfig<T, T>(
       value$,
       loading$ ?? of(false),
       error$ ?? of(new Error()),
       x => x ?? undefined
+    );
+  }
+
+  /**
+   * Create a Future
+   * @param value$ - Values
+   * @param loading$ - The loading state
+   * @param error$ - The error state
+   * @constructor
+   */
+  static Create<T>(
+    value$: Observable<T | undefined>,
+    loading$?: Observable<boolean>,
+    error$?: Observable<Error | boolean | string | undefined>,
+  ) : Future<NonNullable<T>> {
+    return new Future<NonNullable<T>>(
+      value$ as Observable<NonNullable<T>|undefined>,
+      loading$ ?? of(false),
+      error$ ?? of(new Error()),
     );
   }
 
