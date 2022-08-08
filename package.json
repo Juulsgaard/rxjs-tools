@@ -35,5 +35,6 @@
   "peerDependencies": {
     "@consensus-labs/ts-tools": "^1.1.0",
     "rxjs": "^7.4.0"
-  }
+  },
+  "packageManager": "pnpm@7.8.0"
 }
