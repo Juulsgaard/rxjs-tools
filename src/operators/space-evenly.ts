@@ -67,11 +67,16 @@ export function spaceEvenly<T>(delay: number, scheduler: SchedulerLike = asyncSc
  * @param delay - The min delay to maintain between values in ms
  * @param maxHistory - The maximum amount of entries to keep in memory
  * @param minHistory - The minimum amount of entries before history will be used
+ * @param initialHistory - Pre-populate the history of the queue
  * @param scheduler - The scheduler
  */
-export function spaceEvenlyRepeat<T>(delay: number, maxHistory = 100, minHistory = 1, scheduler: SchedulerLike = asyncScheduler): MonoTypeOperatorFunction<T> {
-  maxHistory = Math.max(1, maxHistory);
-  minHistory = Math.min(maxHistory, Math.max(1, minHistory));
+export function spaceEvenlyRepeat<T>(delay: number, maxHistory = 100, minHistory = 1, initialHistory: T[] = [], scheduler: SchedulerLike = asyncScheduler): MonoTypeOperatorFunction<T> {
+  maxHistory = Math.max(0, maxHistory);
+  minHistory = Math.max(1,  Math.min(maxHistory, minHistory));
+
+  if (initialHistory.length > maxHistory) {
+    initialHistory = initialHistory.slice(-maxHistory);
+  }
 
   return (source) => {
     return new Observable(subscriber => {
@@ -79,7 +84,7 @@ export function spaceEvenlyRepeat<T>(delay: number, maxHistory = 100, minHistory
       const queue: (T | Completed | Failed)[] = [];
 
       let history: T[] = [];
-      let futureHistory: T[] = [];
+      let futureHistory: T[] = initialHistory;
 
       function getValue(): Union<T> {
         // If value is queued, return it
@@ -108,7 +113,7 @@ export function spaceEvenlyRepeat<T>(delay: number, maxHistory = 100, minHistory
           const value = getValue();
 
           // Save generated values to future history
-          if (value instanceof Value) {
+          if (maxHistory > 0 && value instanceof Value) {
             futureHistory.push(value.value);
             if (futureHistory.length > maxHistory) futureHistory.shift();
           }
