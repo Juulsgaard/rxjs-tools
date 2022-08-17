@@ -107,7 +107,7 @@ export function spaceEvenlyRepeat<T>(delay: number, maxHistory = 100, minHistory
         () => {
           if (queue.length > 0) return true;
           if (history.length > 0) return true;
-          return futureHistory.length > minHistory;
+          return futureHistory.length >= minHistory;
         },
         () => {
           const value = getValue();
