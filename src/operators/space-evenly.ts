@@ -32,14 +32,17 @@ export function spaceEvenly<T>(delay: number, scheduler: SchedulerLike = asyncSc
     return new Observable(subscriber => {
 
       const queue: Union<T>[] = [];
-      const emitter = new TimedEmitter(subscriber, delay, () => queue.length > 0, () => {
-        if (queue.length > 0) return new Value(queue.shift());
-        return empty;
-      }, scheduler);
+      const emitter = new TimedEmitter(
+        subscriber,
+        delay,
+        () => queue.length > 0,
+        () => queue.shift() ?? empty,
+        scheduler
+      );
 
       const sub = source.subscribe({
         next(value) {
-          queue.push(value);
+          queue.push(new Value(value));
           emitter.emit();
         },
         error: error => {
@@ -72,7 +75,7 @@ export function spaceEvenly<T>(delay: number, scheduler: SchedulerLike = asyncSc
  */
 export function spaceEvenlyRepeat<T>(delay: number, maxHistory = 100, minHistory = 1, initialHistory: T[] = [], scheduler: SchedulerLike = asyncScheduler): MonoTypeOperatorFunction<T> {
   maxHistory = Math.max(0, maxHistory);
-  minHistory = Math.max(1,  Math.min(maxHistory, minHistory));
+  minHistory = Math.max(1, Math.min(maxHistory, minHistory));
 
   if (initialHistory.length > maxHistory) {
     initialHistory = initialHistory.slice(-maxHistory);
@@ -81,14 +84,14 @@ export function spaceEvenlyRepeat<T>(delay: number, maxHistory = 100, minHistory
   return (source) => {
     return new Observable(subscriber => {
 
-      const queue: (T | Completed | Failed)[] = [];
+      const queue: Union<T>[] = [];
 
       let history: T[] = [];
       let futureHistory: T[] = initialHistory;
 
       function getValue(): Union<T> {
         // If value is queued, return it
-        if (queue.length > 0) return new Value(queue.shift());
+        if (queue.length > 0) return queue.shift()!;
 
         // If history is empty try loading future history
         if (history.length < 1) {
@@ -125,7 +128,7 @@ export function spaceEvenlyRepeat<T>(delay: number, maxHistory = 100, minHistory
 
       const sub = source.subscribe({
         next(value) {
-          queue.push(value);
+          queue.push(new Value(value));
           emitter.emit();
         },
         error: error => {

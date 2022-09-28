@@ -3,6 +3,7 @@ export * from './future/future-types';
 export * from './future/future';
 
 export * from './helpers/scheduler';
+export * from './helpers/observable-set';
 
 export * from './operators/state';
 export * from './operators/pause-buffer';
