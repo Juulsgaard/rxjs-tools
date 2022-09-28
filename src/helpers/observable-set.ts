@@ -27,12 +27,11 @@ export class ObservableSet<T> implements ReadonlyObservableSet<T> {
     return new Set<T>(this._set);
   }
 
-  filter(whitelist: T[]|ReadonlySet<T>|undefined) {
+  filter(whitelist: T[]|ReadonlySet<T>|undefined): boolean {
     const length = whitelist && 'size' in whitelist ? whitelist.size : whitelist?.length;
 
     if (!length) {
-      this.clear();
-      return;
+      return this.clear();
     }
 
     const whitelistSet = whitelist instanceof Set ? whitelist : new Set(whitelist);
@@ -43,50 +42,60 @@ export class ObservableSet<T> implements ReadonlyObservableSet<T> {
       set.delete(value);
     }
 
-    if (this._set.size !== set.size) this._set$.next(set);
+    if (this._set.size !== set.size) {
+      this._set$.next(set);
+      return true;
+    }
+
+    return false;
   }
 
-  clear() {
-    if (!this._set.size) return;
+  clear(): boolean {
+    if (!this._set.size) return false;
     this._set$.next(new Set<T>());
+    return true;
   }
 
-  add(value: T) {
-    if (this._set.has(value)) return;
+  add(value: T): boolean {
+    if (this._set.has(value)) return false;
     const set = this.getCopy();
     set.add(value);
     this._set$.next(set);
+    return true;
   }
 
-  set(values: T[] = []) {
-    if (!values.length && !this.size) return;
+  set(values: T[] = []): boolean {
+    if (!values.length && !this.size) return false;
     this._set$.next(new Set<T>(values));
+    return true;
   }
 
-  delete(value: T) {
-    if (!this._set.has(value)) return;
+  delete(value: T): boolean {
+    if (!this._set.has(value)) return false;
     const set = this.getCopy();
     set.delete(value);
     this._set$.next(set);
+    return true;
   }
 
-  toggle(value: T, state?: boolean) {
+  toggle(value: T, state?: boolean): boolean {
 
     if (this._set.has(value)) {
-      if (state === true) return;
+      if (state === true) return false;
       const set = this.getCopy();
       set.delete(value);
       this._set$.next(set);
-      return;
+      return true;
     }
 
-    if (state === false) return;
+    if (state === false) return false;
     const set = this.getCopy();
     set.add(value);
     this._set$.next(set);
+    return true;
   }
 
-  has(value: T) {
+  has(value: T): boolean {
     return this._set.has(value);
   }
 }
