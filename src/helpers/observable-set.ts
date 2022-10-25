@@ -1,4 +1,5 @@
 import {BehaviorSubject, Observable, Observer, Subscribable, Unsubscribable} from "rxjs";
+import {distinctUntilChanged, map} from "rxjs/operators";
 
 export class ObservableSet<T> implements ReadonlyObservableSet<T> {
 
@@ -8,11 +9,17 @@ export class ObservableSet<T> implements ReadonlyObservableSet<T> {
   value$: Observable<ReadonlySet<T>>;
   get value() {return this._set}
 
+  size$: Observable<number>;
   get size() {return this._set.size}
+
+  array$: Observable<T[]>;
+  get array() {return Array.from(this.value)};
 
   constructor(values?: T[]) {
     this._set$ = new BehaviorSubject<ReadonlySet<T>>(new Set<T>(values));
     this.value$ = this._set$.asObservable();
+    this.size$ = this.value$.pipe(map(x => x.size), distinctUntilChanged());
+    this.array$ = this.value$.pipe(map(x => Array.from(x)));
   }
 
   [Symbol.iterator](): IterableIterator<T> {
@@ -102,7 +109,10 @@ export class ObservableSet<T> implements ReadonlyObservableSet<T> {
 
 export interface ReadonlyObservableSet<T> extends Iterable<T>, Subscribable<ReadonlySet<T>> {
   readonly size: number;
+  readonly size$: Observable<number>;
   readonly value: ReadonlySet<T>;
   readonly value$: Observable<ReadonlySet<T>>;
+  readonly array: ReadonlyArray<T>;
+  readonly array$: Observable<ReadonlyArray<T>>;
   has(value: T): boolean;
 }
