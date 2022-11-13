@@ -1,4 +1,4 @@
-import {Observable, OperatorFunction, ReplaySubject, share, Subscribable, switchMap, timer, Unsubscribable} from "rxjs";
+import {Observable, OperatorFunction, ReplaySubject, share, switchMap, timer, Unsubscribable} from "rxjs";
 
 /**
  * Cache the last value of the observable
@@ -47,7 +47,7 @@ export function permanentCache<T>() {
  * The subscribable is unsubscribed from on unsubscription or when a new value is mapped
  * @param mapFunc - Map the value to a subscribable
  */
-function cachedSwitchMap<T, TOut>(mapFunc: (value: T) => Subscribable<TOut>): OperatorFunction<T, Observable<TOut>> {
+function cachedSwitchMap<T, TOut>(mapFunc: (value: T) => Observable<TOut>): OperatorFunction<T, Observable<TOut>> {
   return source => new Observable(subscriber => {
     let subscription: Unsubscribable|undefined;
     const sub = source.subscribe({
@@ -74,7 +74,7 @@ function cachedSwitchMap<T, TOut>(mapFunc: (value: T) => Subscribable<TOut>): Op
  * Every new value voids the observable until a value is emitted from the mapped observable
  * @param mapFunc - Function to generate an observable which populates the main observable after being voided
  */
-export function voidableCache<T, TOut>(mapFunc: (value: T) => Subscribable<TOut>): OperatorFunction<T, TOut> {
+export function voidableCache<T, TOut>(mapFunc: (value: T) => Observable<TOut>): OperatorFunction<T, TOut> {
   return source => source.pipe(
     cachedSwitchMap(x => mapFunc(x)),
     cache(),
@@ -89,7 +89,7 @@ export function voidableCache<T, TOut>(mapFunc: (value: T) => Subscribable<TOut>
  * @param mapFunc - Function to generate an observable which populates the main observable after being voided
  * @param duration - Keep alive duration is ms
  */
-export function voidablePersistentCache<T, TOut>(mapFunc: (value: T) => Subscribable<TOut>, duration = 1000): OperatorFunction<T, TOut> {
+export function voidablePersistentCache<T, TOut>(mapFunc: (value: T) => Observable<TOut>, duration = 1000): OperatorFunction<T, TOut> {
   return source => source.pipe(
     cachedSwitchMap(x => mapFunc(x)),
     persistentCache(duration),
@@ -103,7 +103,7 @@ export function voidablePersistentCache<T, TOut>(mapFunc: (value: T) => Subscrib
  * Every new value voids the observable until a value is emitted from the mapped observable
  * @param mapFunc - Function to generate an observable which populates the main observable after being voided
  */
-export function voidablePermanentCache<T, TOut>(mapFunc: (value: T) => Subscribable<TOut>): OperatorFunction<T, TOut> {
+export function voidablePermanentCache<T, TOut>(mapFunc: (value: T) => Observable<TOut>): OperatorFunction<T, TOut> {
   return source => source.pipe(
     cachedSwitchMap(x => mapFunc(x)),
     permanentCache(),
