@@ -10,5 +10,6 @@ export * from './operators/pause-buffer';
 export * from './operators/timeout';
 export * from './operators/space-evenly';
 export * from './operators/cache';
+export * from './operators/async';
 
 export * from './util/get-value';
