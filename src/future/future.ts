@@ -1,6 +1,4 @@
-import {
-  auditTime, combineLatest, Observable, Observer, of, pairwise, shareReplay, Subscribable, Subscription, switchMap, take, tap, Unsubscribable
-} from "rxjs";
+import {auditTime, combineLatest, Observable, Observer, of, pairwise, Subscribable, Subscription, switchMap, take, Unsubscribable} from "rxjs";
 import {distinctUntilChanged, filter, first, map} from "rxjs/operators";
 import {FutureConfig} from "./future-config";
 import {FutureEmpty, FutureError, FutureLoading, FutureUnion, FutureValue} from "./future-types";
@@ -45,6 +43,14 @@ export class Future<T> implements Subscribable<FutureUnion<T>> {
       loading$ ?? of(false),
       error$ ?? of(new Error()),
     );
+  }
+
+  /**
+   * Create an empty Future
+   * @constructor
+   */
+  static Empty() : Future<any> {
+    return new Future<any>(of(undefined), of(false), of(false));
   }
 
   /** The state of the Future */

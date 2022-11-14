@@ -1,6 +1,6 @@
 {
   "name": "@consensus-labs/rxjs-tools",
-  "version": "1.1.9",
+  "version": "1.1.10",
   "description": "Tooling for working with RXJS",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
