@@ -1,5 +1,5 @@
 import {
-  auditTime, BehaviorSubject, combineLatest, Observable, Observer, of, pairwise, Subscribable, Subscription, switchMap,
+  BehaviorSubject, combineLatest, Observable, Observer, of, pairwise, Subscribable, Subscription, switchMap,
   take, Unsubscribable
 } from "rxjs";
 import {distinctUntilChanged, filter, first, map} from "rxjs/operators";
@@ -112,6 +112,7 @@ export class Future<T> implements Subscribable<FutureUnion<T>> {
   ) {
 
     this.rawValue$ = value$.pipe(
+      // persistentCache(),
       cache()
     );
 
@@ -132,8 +133,9 @@ export class Future<T> implements Subscribable<FutureUnion<T>> {
 
     // Get combined state
     let combined = combineLatest([this.rawValue$, loading$, errors$]).pipe(
-      // Debounce for when value and loading state change at the same time
-      auditTime(0),
+      distinctUntilChanged(
+        ([oldVal, oldLoading, oldError], [val, loading, error]) => oldVal === val && oldLoading === loading && oldError === error
+      ),
       cache()
     );
 
@@ -144,6 +146,17 @@ export class Future<T> implements Subscribable<FutureUnion<T>> {
     this.state$ = new Observable<FutureUnion<NonNullable<T>>>(subscriber => {
 
       const sub = new Subscription();
+
+      // Map future state
+      sub.add(combined.pipe(
+        map(([value, loading, error]) => {
+          if (loading) return new FutureLoading(value ?? undefined);
+          if (error) return new FutureError(error, value ?? undefined);
+          if (value === undefined) return new FutureEmpty();
+          return new FutureValue(value!);
+        }),
+        distinctUntilChanged((a, b) => !Future.stateChanged(a, b)),
+      ).subscribe(subscriber));
 
       //<editor-fold desc="Load Event">
 
@@ -181,17 +194,6 @@ export class Future<T> implements Subscribable<FutureUnion<T>> {
         ).subscribe(() => onDeleted?.()));
       }
       //</editor-fold>
-
-      // Map future state
-      sub.add(combined.pipe(
-        map(([value, loading, error]) => {
-          if (loading) return new FutureLoading(value ?? undefined);
-          if (error) return new FutureError(error, value ?? undefined);
-          if (value === undefined) return new FutureEmpty();
-          return new FutureValue(value!);
-        }),
-        distinctUntilChanged((a, b) => !Future.stateChanged(a, b)),
-      ).subscribe(subscriber));
 
       return sub;
 
