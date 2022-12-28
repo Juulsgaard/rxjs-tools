@@ -1,4 +1,7 @@
-import {auditTime, combineLatest, Observable, Observer, of, pairwise, Subscribable, Subscription, switchMap, take, Unsubscribable} from "rxjs";
+import {
+  auditTime, BehaviorSubject, combineLatest, Observable, Observer, of, pairwise, Subscribable, Subscription, switchMap,
+  take, Unsubscribable
+} from "rxjs";
 import {distinctUntilChanged, filter, first, map} from "rxjs/operators";
 import {FutureConfig} from "./future-config";
 import {FutureEmpty, FutureError, FutureLoading, FutureUnion, FutureValue} from "./future-types";
@@ -37,9 +40,9 @@ export class Future<T> implements Subscribable<FutureUnion<T>> {
     value$: Observable<T | undefined>,
     loading$?: Observable<boolean>,
     error$?: Observable<Error | boolean | string | undefined>,
-  ) : Future<NonNullable<T>> {
+  ): Future<NonNullable<T>> {
     return new Future<NonNullable<T>>(
-      value$ as Observable<NonNullable<T>|undefined>,
+      value$ as Observable<NonNullable<T> | undefined>,
       loading$ ?? of(false),
       error$ ?? of(new Error()),
     );
@@ -49,8 +52,31 @@ export class Future<T> implements Subscribable<FutureUnion<T>> {
    * Create an empty Future
    * @constructor
    */
-  static Empty() : Future<any> {
+  static Empty(): Future<any> {
     return new Future<any>(of(undefined), of(false), of(false));
+  }
+
+  static FromRequest<T>(req: Observable<T>): Future<T> {
+    const val$ = new BehaviorSubject<T | undefined>(undefined);
+    const err$ = new BehaviorSubject<Error | undefined>(undefined);
+    const load$ = new BehaviorSubject(true);
+    req.subscribe({
+      next: x => val$.next(x),
+      error: err => {
+        err$.next(err);
+        err$.complete();
+        load$.next(false);
+        load$.complete();
+        val$.complete();
+      },
+      complete: () => {
+        val$.complete();
+        err$.complete();
+        load$.next(false);
+        load$.complete();
+      }
+    });
+    return new Future<T>(val$, load$, err$);
   }
 
   /** The state of the Future */
