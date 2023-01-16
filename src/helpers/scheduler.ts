@@ -1,5 +1,5 @@
-import {BehaviorSubject, Observable} from "rxjs";
-import {distinctUntilChanged, map} from "rxjs/operators";
+import {BehaviorSubject, concat, Observable, pairwise} from "rxjs";
+import {distinctUntilChanged, first, map} from "rxjs/operators";
 import {persistentCache} from "../operators/cache";
 
 export class Scheduler<TData> {
@@ -12,15 +12,39 @@ export class Scheduler<TData> {
     this.items$.subscribe(items => this.processList(items));
 
     this.front$ = this.items$.pipe(
-      map(x => x.length ? x?.[0] : undefined),
+      map(x => x.at(0)),
       distinctUntilChanged(),
       persistentCache(),
     );
 
+    const firstFront$ = this.front$.pipe(
+      first(),
+      map(item => ({added: !!item, item}))
+    );
+    const frontChanges$ = this.items$.pipe(
+      pairwise(),
+      map(([oldItems, newItems]) => ({added: newItems.length > oldItems.length, item: newItems.at(0)}))
+    );
+    this.frontChanges$ = concat(firstFront$, frontChanges$).pipe(
+      distinctUntilChanged((prev, next) => prev.item === next.item)
+    );
+
     this.back$ = this.items$.pipe(
-      map(x => x.length ? x?.[x.length - 1] : undefined),
+      map(x => x.at(-1)),
       distinctUntilChanged(),
       persistentCache(),
+    );
+
+    const firstBack$ = this.back$.pipe(
+      first(),
+      map(item => ({added: !!item, item}))
+    );
+    const backChanges$ = this.items$.pipe(
+      pairwise(),
+      map(([oldItems, newItems]) => ({added: newItems.length > oldItems.length, item: newItems.at(-1)}))
+    );
+    this.backChanges$ = concat(firstBack$, backChanges$).pipe(
+      distinctUntilChanged((prev, next) => prev.item === next.item)
     );
 
     this.empty$ = this.items$.pipe(
@@ -34,8 +58,7 @@ export class Scheduler<TData> {
    * Element at the front of the queue
    */
   get front() {
-    if (!this.items.length) return undefined;
-    return this.items[0];
+    return this.items.at(0);
   }
 
   /**
@@ -43,18 +66,23 @@ export class Scheduler<TData> {
    */
   front$: Observable<TData|undefined>;
 
+  /** Observable returning the current front element and whether it was just added */
+  frontChanges$: Observable<Change<TData>>;
+
   /**
    * Element at the back of the queue
    */
   get back() {
-    if (!this.items.length) return undefined;
-    return this.items[this.items.length - 1];
+    return this.items.at(-1);
   }
 
   /**
    * Observable returning the element at the back of the queue
    */
   back$: Observable<TData|undefined>;
+
+  /** Observable returning the current back element and whether it was just added */
+  backChanges$: Observable<Change<TData>>;
 
   get empty() {
     return this.items.length < 1;
@@ -139,4 +167,9 @@ export class Scheduler<TData> {
     }
   }
 
+}
+
+interface Change<T> {
+  added: boolean;
+  item?: T;
 }
