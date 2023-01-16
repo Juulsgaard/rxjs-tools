@@ -67,7 +67,7 @@ export class Scheduler<TData> {
   front$: Observable<TData|undefined>;
 
   /** Observable returning the current front element and whether it was just added */
-  frontChanges$: Observable<Change<TData>>;
+  frontChanges$: Observable<SchedulerChange<TData>>;
 
   /**
    * Element at the back of the queue
@@ -82,7 +82,7 @@ export class Scheduler<TData> {
   back$: Observable<TData|undefined>;
 
   /** Observable returning the current back element and whether it was just added */
-  backChanges$: Observable<Change<TData>>;
+  backChanges$: Observable<SchedulerChange<TData>>;
 
   get empty() {
     return this.items.length < 1;
@@ -169,7 +169,7 @@ export class Scheduler<TData> {
 
 }
 
-interface Change<T> {
+export interface SchedulerChange<T> {
   added: boolean;
   item?: T;
 }
