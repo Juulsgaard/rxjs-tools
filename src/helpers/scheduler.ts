@@ -158,7 +158,7 @@ export class Scheduler<TData> {
   private processList(items: TData[]) {
     if (this.updateItem) {
       for (let i = 0; i < items.length; i++) {
-        this.updateItem(items[i], i);
+        this.updateItem(items[i]!, i);
       }
     }
 
