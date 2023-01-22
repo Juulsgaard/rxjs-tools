@@ -55,7 +55,7 @@ export function latestValueFromOrDefault<T, TDefault>(observable?: Subscribable<
  * Asynchronously get the first value emitted by the Subscribable
  * @param subject - The subscribable
  */
-function firstValueFromSubscribable<T>(subject: Subscribable<T>): Promise<T> {
+export function firstValueFromSubscribable<T>(subject: Subscribable<T>): Promise<T> {
   return new Promise<T>((_resolve, _reject) => {
     let sub: Unsubscribable|undefined;
 
@@ -82,7 +82,7 @@ function firstValueFromSubscribable<T>(subject: Subscribable<T>): Promise<T> {
  * If no value is emitted undefined will be returned
  * @param subject - The subscribable
  */
-function firstValueFromSubscribableOrDefault<T>(subject: Subscribable<T>): Promise<T|undefined>;
+export function firstValueFromSubscribableOrDefault<T>(subject: Subscribable<T>): Promise<T|undefined>;
 /**
  * Asynchronously get the first value emitted by the Subscribable.
  * If no value is emitted or the timout is reached, the default value will be returned instead
@@ -90,8 +90,8 @@ function firstValueFromSubscribableOrDefault<T>(subject: Subscribable<T>): Promi
  * @param defaultValue - The default value to use
  * @param timeout - The timeout before the default value is used
  */
-function firstValueFromSubscribableOrDefault<T, TDefault>(subject: Subscribable<T>, defaultValue: TDefault, timeout?: number): Promise<T|TDefault>;
-function firstValueFromSubscribableOrDefault<T, TDefault>(subject: Subscribable<T>, defaultValue?: TDefault, timeout?: number): Promise<T|TDefault|undefined> {
+export function firstValueFromSubscribableOrDefault<T, TDefault>(subject: Subscribable<T>, defaultValue: TDefault, timeout?: number): Promise<T|TDefault>;
+export function firstValueFromSubscribableOrDefault<T, TDefault>(subject: Subscribable<T>, defaultValue?: TDefault, timeout?: number): Promise<T|TDefault|undefined> {
   return new Promise<T | TDefault | undefined>((_resolve, _reject) => {
     let timer: number|undefined;
     let sub: Unsubscribable|undefined;
