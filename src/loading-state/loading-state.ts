@@ -48,7 +48,7 @@ export class LoadingState<TData> extends IValueLoadingState<TData> {
   /** @inheritDoc */
   readonly isAsync = true;
 
-  constructor(data: Promise<TData> | Subscribable<TData>) {
+  constructor(data: Promise<TData> | Observable<TData> | Subscribable<TData>) {
     super();
 
     this.result$ = this._result$.asObservable();

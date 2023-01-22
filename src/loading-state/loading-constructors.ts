@@ -16,7 +16,7 @@ export module Loading {
    * @param value$ - The async operation
    * @constructor
    */
-  export function Async<TData>(value$: Promise<TData> | Subscribable<TData>): LoadingState<TData> {
+  export function Async<TData>(value$: Promise<TData> | Observable<TData> | Subscribable<TData>): LoadingState<TData> {
     return new LoadingState<TData>(value$);
   }
 
@@ -25,7 +25,7 @@ export module Loading {
    * @param value$ - The async operation
    * @constructor
    */
-  export function Any<TData>(value$: Promise<TData> | Observable<TData>): LoadingState<TData>;
+  export function Any<TData>(value$: Promise<TData> | Observable<TData> | Subscribable<TData>): LoadingState<TData>;
   /**
    * Creates loading state with a static value
    * @constructor
