@@ -14,4 +14,11 @@ export * from './operators/cache';
 export * from './operators/async';
 export * from './operators/filters';
 
+export * from './loading-state/loading-constructors';
+export * from './loading-state/loading-state';
+export * from './loading-state/delayed-loading-state';
+export * from './loading-state/loading-state.interface';
+export * from './loading-state/value-loading-state.interface';
+export * from './loading-state/cancelled.error';
+
 export * from './util/get-value';
