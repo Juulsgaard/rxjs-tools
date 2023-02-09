@@ -14,12 +14,40 @@ export class ErrorLoadingState extends ILoadingState {
   readonly loading = false;
   readonly isAsync = false;
 
-  constructor(error: Error) {
+  constructor(private error: Error) {
     super();
     this.error$ = of(error);
   }
 
   cancel() {
+  }
+
+  /**
+   * Promise implementation, always errors
+   * @param next - Is never called
+   * @param error - Is always called with the error
+   */
+  then(next: () => void, error?: (error: Error) => void): this {
+    error?.(this.error);
+    return this;
+  }
+
+  /**
+   * Promise implementation, always errors
+   * @param func - Immediate gets called with error
+   */
+  catch(func: (error: Error) => void): this {
+    func(this.error)
+    return this;
+  }
+
+  /**
+   * Promise implementation, is called immediately
+   * @param func - Immediate gets called
+   */
+  finally(func: () => void): this {
+    func();
+    return this;
   }
 }
 

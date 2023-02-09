@@ -14,5 +14,32 @@ export class EmptyLoadingState extends ILoadingState {
 
   cancel() {
   }
+
+  /**
+   * Promise implementation, immediate executes
+   * @param next - Is executed immediately
+   * @param error - Is never executed
+   */
+  then(next: () => void, error?: (error: Error) => void): this {
+    next();
+    return this;
+  }
+
+  /**
+   * Promise implementation, never executes
+   * @param func - Is never executed
+   */
+  catch(func: (error: Error) => void): this {
+    return this;
+  }
+
+  /**
+   * Promise implementation, immediate executes
+   * @param func - Is executed immediately
+   */
+  finally(func: () => void): this {
+    func();
+    return this;
+  }
 }
 
