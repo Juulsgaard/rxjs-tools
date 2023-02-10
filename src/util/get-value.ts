@@ -1,4 +1,4 @@
-import {Subscribable, Unsubscribable} from "rxjs";
+import {Observable, Subscribable, Unsubscribable} from "rxjs";
 
 //<editor-fold desc="Latest Value">
 /**
@@ -8,7 +8,7 @@ import {Subscribable, Unsubscribable} from "rxjs";
  * @param observable
  * @throws Error
  */
-export function latestValueFrom<T>(observable: Subscribable<T>): T {
+export function latestValueFrom<T>(observable: Observable<T>|Subscribable<T>): T {
   let hasValue = false;
   let value: T;
   const sub = observable.subscribe({
@@ -30,15 +30,15 @@ export function latestValueFrom<T>(observable: Subscribable<T>): T {
  * @param defaultValue
  * @return value - Cached value, or given default if none was found
  */
-export function latestValueFromOrDefault<T, TDefault>(observable: Subscribable<T>, defaultValue: TDefault): T|TDefault;
+export function latestValueFromOrDefault<T, TDefault>(observable: Observable<T>|Subscribable<T>, defaultValue: TDefault): T|TDefault;
 /**
  * Reads a cached value from synchronously resolving observable.
  * Often used in conjunction with the cache operator to read the latest cached value.
  * @param observable
  * @return value - Cached value, or undefined if none was found
  */
-export function latestValueFromOrDefault<T>(observable?: Subscribable<T>): T|undefined;
-export function latestValueFromOrDefault<T, TDefault>(observable?: Subscribable<T>, defaultValue?: TDefault): T|TDefault|undefined {
+export function latestValueFromOrDefault<T>(observable?: Observable<T>|Subscribable<T>): T|undefined;
+export function latestValueFromOrDefault<T, TDefault>(observable?: Observable<T>|Subscribable<T>, defaultValue?: TDefault): T|TDefault|undefined {
   if (!observable) return undefined;
   let value: T|TDefault|undefined = defaultValue;
   const sub = observable.subscribe({
@@ -55,7 +55,7 @@ export function latestValueFromOrDefault<T, TDefault>(observable?: Subscribable<
  * Asynchronously get the first value emitted by the Subscribable
  * @param subject - The subscribable
  */
-export function firstValueFromSubscribable<T>(subject: Subscribable<T>): Promise<T> {
+export function firstValueFromSubscribable<T>(subject: Observable<T>|Subscribable<T>): Promise<T> {
   return new Promise<T>((_resolve, _reject) => {
     let sub: Unsubscribable|undefined;
 
@@ -82,7 +82,7 @@ export function firstValueFromSubscribable<T>(subject: Subscribable<T>): Promise
  * If no value is emitted undefined will be returned
  * @param subject - The subscribable
  */
-export function firstValueFromSubscribableOrDefault<T>(subject: Subscribable<T>): Promise<T|undefined>;
+export function firstValueFromSubscribableOrDefault<T>(subject: Observable<T>|Subscribable<T>): Promise<T|undefined>;
 /**
  * Asynchronously get the first value emitted by the Subscribable.
  * If no value is emitted or the timout is reached, the default value will be returned instead
@@ -90,8 +90,8 @@ export function firstValueFromSubscribableOrDefault<T>(subject: Subscribable<T>)
  * @param defaultValue - The default value to use
  * @param timeout - The timeout before the default value is used
  */
-export function firstValueFromSubscribableOrDefault<T, TDefault>(subject: Subscribable<T>, defaultValue: TDefault, timeout?: number): Promise<T|TDefault>;
-export function firstValueFromSubscribableOrDefault<T, TDefault>(subject: Subscribable<T>, defaultValue?: TDefault, timeout?: number): Promise<T|TDefault|undefined> {
+export function firstValueFromSubscribableOrDefault<T, TDefault>(subject: Observable<T>|Subscribable<T>, defaultValue: TDefault, timeout?: number): Promise<T|TDefault>;
+export function firstValueFromSubscribableOrDefault<T, TDefault>(subject: Observable<T>|Subscribable<T>, defaultValue?: TDefault, timeout?: number): Promise<T|TDefault|undefined> {
   return new Promise<T | TDefault | undefined>((_resolve, _reject) => {
     let timer: number|undefined;
     let sub: Unsubscribable|undefined;
