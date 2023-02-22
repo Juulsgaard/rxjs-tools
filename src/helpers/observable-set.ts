@@ -71,6 +71,15 @@ export class ObservableSet<T> implements ReadonlyObservableSet<T> {
     return true;
   }
 
+  addRange(values: T[]): boolean {
+    const set = this.getCopy();
+    const size = set.size;
+    values.forEach(v => set.add(v));
+    if (set.size === size) return false;
+    this._set$.next(set);
+    return true;
+  }
+
   set(values: T[] = []): boolean {
     if (!values.length && !this.size) return false;
     this._set$.next(new Set<T>(values));
@@ -81,6 +90,15 @@ export class ObservableSet<T> implements ReadonlyObservableSet<T> {
     if (!this._set.has(value)) return false;
     const set = this.getCopy();
     set.delete(value);
+    this._set$.next(set);
+    return true;
+  }
+
+  deleteRange(values: T[]): boolean {
+    const set = this.getCopy();
+    const size = set.size;
+    values.forEach(v => set.delete(v));
+    if (set.size === size) return false;
     this._set$.next(set);
     return true;
   }
@@ -104,6 +122,12 @@ export class ObservableSet<T> implements ReadonlyObservableSet<T> {
 
   has(value: T): boolean {
     return this._set.has(value);
+  }
+
+  modify(modify: (set: Set<T>) => void) {
+    const set = this.getCopy();
+    modify(set);
+    this._set$.next(set);
   }
 }
 
