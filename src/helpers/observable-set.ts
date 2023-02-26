@@ -103,17 +103,23 @@ export class ObservableSet<T> implements ReadonlyObservableSet<T> {
     return true;
   }
 
-  toggle(value: T, state?: boolean): boolean {
+  /**
+   * Toggle a value in the set
+   * @param value - The value to toggle
+   * @param state - A forced state (`true` = always add, `false` = always delete)
+   * @returns The applied change (`true` = item added, `false` = item removed, `undefined` = nothing changed)
+   */
+  toggle(value: T, state?: boolean): boolean|undefined {
 
     if (this._set.has(value)) {
-      if (state === true) return false;
+      if (state === true) return undefined;
       const set = this.getCopy();
       set.delete(value);
       this._set$.next(set);
-      return true;
+      return false;
     }
 
-    if (state === false) return false;
+    if (state === false) return undefined;
     const set = this.getCopy();
     set.add(value);
     this._set$.next(set);
