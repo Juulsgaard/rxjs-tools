@@ -13,6 +13,7 @@ export * from './operators/space-evenly';
 export * from './operators/cache';
 export * from './operators/async';
 export * from './operators/filters';
+export * from './operators/with-value';
 
 export * from './loading-state/loading-constructors';
 export * from './loading-state/loading-state';
