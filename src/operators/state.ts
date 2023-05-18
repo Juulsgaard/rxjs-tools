@@ -1,4 +1,4 @@
-import {last, MonoTypeOperatorFunction, Subject, tap} from "rxjs";
+import {MonoTypeOperatorFunction, Subject, tap} from "rxjs";
 import {isFunction} from "@consensus-labs/ts-tools";
 
 /**
@@ -11,10 +11,28 @@ export function subscribed<T>(onState: (subscribed: boolean) => void): MonoTypeO
  * @param state$ - A subject that will receive the current subscription state
  */
 export function subscribed<T>(state$: Subject<boolean>): MonoTypeOperatorFunction<T>
-export function subscribed<T>(state: Subject<boolean>|((subscribed: boolean) => void)): MonoTypeOperatorFunction<T> {
+export function subscribed<T>(state: Subject<boolean> | ((subscribed: boolean) => void)): MonoTypeOperatorFunction<T> {
   const setState = isFunction(state) ? state : state.next.bind(state);
   return tap<T>({
-   subscribe: () => setState(true),
+    subscribe: () => setState(true),
+    unsubscribe: () => setState(false)
+  });
+}
+
+/**
+ * Projects the activated state of the observable
+ * @param onState - Callback triggered whenever the active state changes
+ */
+export function active<T>(onState: (subscribed: boolean) => void): MonoTypeOperatorFunction<T>
+/**
+ * Projects the activated state of the observable
+ * @param state$ - A subject that will receive the current active state
+ */
+export function active<T>(state$: Subject<boolean>): MonoTypeOperatorFunction<T>
+export function active<T>(state: Subject<boolean> | ((subscribed: boolean) => void)): MonoTypeOperatorFunction<T> {
+  const setState = isFunction(state) ? state : state.next.bind(state);
+  return tap<T>({
+    subscribe: () => setState(true),
     finalize: () => setState(false)
   });
 }
@@ -31,7 +49,7 @@ export function loadingFirst<T>(onState: (loadingFirst: boolean) => void): MonoT
  * @param state$ - A subject that will receive the current state
  */
 export function loadingFirst<T>(state$: Subject<boolean>): MonoTypeOperatorFunction<T>
-export function loadingFirst<T>(state: Subject<boolean>|((loadingFirst: boolean) => void)): MonoTypeOperatorFunction<T> {
+export function loadingFirst<T>(state: Subject<boolean> | ((loadingFirst: boolean) => void)): MonoTypeOperatorFunction<T> {
 
   const baseSetState = isFunction(state) ? state : state.next.bind(state);
 
