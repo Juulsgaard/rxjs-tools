@@ -4,7 +4,7 @@ import {Disposable} from "@consensus-labs/ts-tools";
 /**
  * Will dispose any value when a new one is emitted or the observable is unsubscribed from
  */
-export function disposable<T extends Disposable>(): MonoTypeOperatorFunction<T> {
+export function disposable<T extends Disposable|undefined>(): MonoTypeOperatorFunction<T> {
   return source => new Observable(subscriber => {
 
     let oldValue: Disposable|undefined;
