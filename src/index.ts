@@ -16,6 +16,7 @@ export * from './operators/filters';
 export * from './operators/with-value';
 export * from './operators/lists';
 export * from './operators/defer';
+export * from './operators/disposable';
 
 export * from './loading-state/loading-constructors';
 export * from './loading-state/loading-state';
