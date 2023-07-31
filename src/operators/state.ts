@@ -1,5 +1,5 @@
 import {MonoTypeOperatorFunction, Subject, tap} from "rxjs";
-import {isFunction} from "@consensus-labs/ts-tools";
+import {isFunction} from "@juulsgaard/ts-tools";
 
 /**
  * Projects the subscription state of the observable

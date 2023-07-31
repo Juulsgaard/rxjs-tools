@@ -1,4 +1,4 @@
-import {isBool, ListMapCache, MapFunc} from "@consensus-labs/ts-tools";
+import {isBool, ListMapCache, MapFunc} from "@juulsgaard/ts-tools";
 import {Observable, OperatorFunction, Subscribable, Unsubscribable} from "rxjs";
 import {map} from "rxjs/operators";
 

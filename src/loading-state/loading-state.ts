@@ -1,6 +1,6 @@
 import {BehaviorSubject, lastValueFrom, Observable, ReplaySubject, startWith, Subscribable, Unsubscribable} from "rxjs";
 import {map} from "rxjs/operators";
-import {isObject} from "@consensus-labs/ts-tools";
+import {isObject} from "@juulsgaard/ts-tools";
 import {permanentCache} from "../operators/cache";
 import {CancelledError} from "./cancelled.error";
 import {IValueLoadingState} from "./value-loading-state.interface";

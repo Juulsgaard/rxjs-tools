@@ -1,5 +1,5 @@
 import {MonoTypeOperatorFunction, Observable} from "rxjs";
-import {Disposable} from "@consensus-labs/ts-tools";
+import {Disposable} from "@juulsgaard/ts-tools";
 
 /**
  * Will dispose any value when a new one is emitted or the observable is unsubscribed from

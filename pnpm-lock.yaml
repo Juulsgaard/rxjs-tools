@@ -1,7 +1,7 @@
 lockfileVersion: 5.4
 
 specifiers:
-  '@consensus-labs/ts-tools': 1.4.0
+  '@juulsgaard/ts-tools': 1.4.2
   '@types/jest': ^29.5.1
   cross-env: ^7.0.3
   jest: ^29.5.0
@@ -12,7 +12,7 @@ specifiers:
   typescript: ~5.0.4
 
 devDependencies:
-  '@consensus-labs/ts-tools': 1.4.0_typescript@5.0.4
+  '@juulsgaard/ts-tools': 1.4.2_typescript@5.0.4
   '@types/jest': 29.5.1
   cross-env: 7.0.3
   jest: 29.5.0
@@ -363,14 +363,6 @@ packages:
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
     dev: true
 
-  /@consensus-labs/ts-tools/1.4.0_typescript@5.0.4:
-    resolution: {integrity: sha1-eOvcEUnqNQNcV2Nvdhtec9/mUcQ=, tarball: https://gitlab.com/api/v4/projects/36928519/packages/npm/@consensus-labs/ts-tools/-/@consensus-labs/ts-tools-1.4.0.tgz}
-    peerDependencies:
-      typescript: ~5.0.4
-    dependencies:
-      typescript: 5.0.4
-    dev: true
-
   /@istanbuljs/load-nyc-config/1.1.0:
     resolution: {integrity: sha512-VjeHSlIzpv/NyD3N0YuHfXOPDIixcA1q2ZV98wsMqcYlPmv2n3Yb2lYP9XMElnaFVXg5A7YLTeLu6V84uQDjmQ==}
     engines: {node: '>=8'}
@@ -662,6 +654,14 @@ packages:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.0
       '@jridgewell/sourcemap-codec': 1.4.14
+    dev: true
+
+  /@juulsgaard/ts-tools/1.4.2_typescript@5.0.4:
+    resolution: {integrity: sha512-x/YPj34CDUT4i4uSavAxoshmvP18wJzuVMc3TF5BR8l2+I4tRY5NG9yK2HebeSMU+Ls0dcdiFJ2slPXSApkndg==}
+    peerDependencies:
+      typescript: ~5.0.4
+    dependencies:
+      typescript: 5.0.4
     dev: true
 
   /@sinclair/typebox/0.24.27:

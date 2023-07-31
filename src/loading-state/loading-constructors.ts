@@ -7,7 +7,7 @@ import {LoadingState} from "./loading-state";
 import {isPromise} from "rxjs/internal/util/isPromise";
 import {StaticLoadingState} from "./static-loading-state";
 import {ErrorLoadingState, ValueErrorLoadingState} from "./error-loading-state";
-import {isFunction} from "@consensus-labs/ts-tools";
+import {isFunction} from "@juulsgaard/ts-tools";
 
 export module Loading {
 
