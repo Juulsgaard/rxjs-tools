@@ -26,3 +26,4 @@ export * from './loading-state/value-loading-state.interface';
 export * from './loading-state/cancelled.error';
 
 export * from './util/get-value';
+export * from './util/type-guards';
