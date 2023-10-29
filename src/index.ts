@@ -5,6 +5,8 @@ export * from './future/future';
 export * from './helpers/scheduler';
 export * from './helpers/observable-set';
 export * from './helpers/repetition';
+export * from './helpers/async-value-mapper';
+export * from './helpers/async-tuple-mapper';
 
 export * from './operators/state';
 export * from './operators/pause-buffer';
