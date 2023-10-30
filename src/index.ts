@@ -7,6 +7,7 @@ export * from './helpers/observable-set';
 export * from './helpers/repetition';
 export * from './helpers/async-value-mapper';
 export * from './helpers/async-tuple-mapper';
+export * from './helpers/async-object-mapper';
 
 export * from './operators/state';
 export * from './operators/pause-buffer';

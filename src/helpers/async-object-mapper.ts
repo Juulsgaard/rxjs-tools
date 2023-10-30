@@ -3,30 +3,30 @@ import {from, Observable, Subject, Subscription, Unsubscribable} from "rxjs";
 import {AsyncOrSyncVal, AsyncVal, UnwrappedAsyncOrSyncVal, UnwrappedAsyncVal} from "./async-value-mapper";
 import {isSubscribable} from "../util/type-guards";
 
-export type AsyncTuple<T extends unknown[]> = {[K in keyof T]: AsyncVal<T[K]>};
-export type AsyncOrSyncTuple<T extends unknown[]> = {[K in keyof T]: AsyncOrSyncVal<T[K]>};
-export type UnwrappedAsyncTuple<T extends AsyncTuple<unknown[]>> = {[K in keyof T]: UnwrappedAsyncVal<T[K]>};
-export type UnwrappedAsyncOrSyncTuple<T extends AsyncOrSyncTuple<unknown[]>> = {[K in keyof T]: UnwrappedAsyncOrSyncVal<T[K]>};
+export type AsyncObject<T extends Record<string, unknown>> = {[K in keyof T]: AsyncVal<T[K]>};
+export type AsyncOrSyncObject<T extends Record<string, unknown>> = {[K in keyof T]: AsyncOrSyncVal<T[K]>};
+export type UnwrappedAsyncObject<T extends AsyncObject<Record<string, unknown>>> = {[K in keyof T]: UnwrappedAsyncVal<T[K]>};
+export type UnwrappedAsyncOrSyncObject<T extends AsyncOrSyncObject<Record<string, unknown>>> = {[K in keyof T]: UnwrappedAsyncOrSyncVal<T[K]>};
 
-abstract class BaseAsyncTupleMapper<T extends unknown[]> implements Disposable {
+abstract class BaseAsyncObjectMapper<T extends Record<string, unknown>> implements Disposable {
 
   private disposed = false;
 
   private readonly _values$ = new Subject<T>();
   public readonly values$ = this._values$.asObservable();
 
-  private current?: Map<AsyncVal<unknown>|number, ValueCell<unknown>>;
+  private current?: Map<AsyncVal<unknown>|string, ValueCell<unknown>>;
 
-  update(values: AsyncOrSyncTuple<T>) {
+  update(values: AsyncOrSyncObject<T>) {
     if (this.disposed) return;
 
     this.current?.forEach(x => x.reset());
 
-    const newCells = new  Map<AsyncVal<unknown>|number, ValueCell<unknown>>();
+    const newCells = new  Map<AsyncVal<unknown>|string, ValueCell<unknown>>();
 
-    let i = 0;
-    for (let value of values) {
-      const [key, cell] = this.getCell(value, i++);
+    for (let prop in values) {
+      const value = values[prop];
+      const [key, cell] = this.getCell(value, prop);
       newCells.set(key, cell);
     }
 
@@ -38,29 +38,30 @@ abstract class BaseAsyncTupleMapper<T extends unknown[]> implements Disposable {
     this.current.forEach(c => c.onUpdate(() => this.evaluate(newCells.values())));
   }
 
-  private getCell(value: AsyncOrSyncVal<unknown>, index: number): [number|AsyncVal<unknown>, ValueCell<unknown>] {
+  private getCell(value: AsyncOrSyncVal<unknown>, prop: string): [string|AsyncVal<unknown>, ValueCell<unknown>] {
     if (value instanceof Promise) {
-      return [value, this.handleAsync(value)];
+      return [value, this.handleAsync(value, prop)];
     }
 
     if (value instanceof Observable || isSubscribable(value)) {
-      return [value, this.handleAsync(value)];
+      return [value, this.handleAsync(value, prop)];
     }
 
-    return [index, this.handleSync(value)];
+    return [prop, this.handleSync(value, prop)];
   }
 
-  private handleAsync(val: AsyncVal<unknown>) {
+  private handleAsync(val: AsyncVal<unknown>, prop: string) {
     const oldCell = this.current?.get(val);
     if (oldCell) {
+      oldCell.prop = prop;
       this.current!.delete(val);
       return oldCell;
     }
-    return new ValueCell(val);
+    return new ValueCell(val, prop);
   }
 
-  private handleSync(val: unknown) {
-    return new ValueCell(val);
+  private handleSync(val: unknown, prop: string) {
+    return new ValueCell(val, prop);
   }
 
   protected abstract evaluate(cells: IterableIterator<ValueCell<unknown>>): void;
@@ -80,36 +81,34 @@ abstract class BaseAsyncTupleMapper<T extends unknown[]> implements Disposable {
   }
 }
 
-export class AsyncTupleFallbackMapper<T extends unknown[], TFallback> extends BaseAsyncTupleMapper<{[K in keyof T]: T[K]|TFallback}> {
+export class AsyncObjectFallbackMapper<T extends Record<string, unknown>, TFallback> extends BaseAsyncObjectMapper<{[K in keyof T]: T[K]|TFallback}> {
 
   constructor(private fallback: TFallback) {
     super();
   }
 
   protected evaluate(cells: IterableIterator<ValueCell<unknown>>): void {
-    const values: unknown[] = [];
+    const values: Record<string, unknown> = {};
     for (let cell of cells) {
-      values.push(cell.hasValue ? cell.value! : this.fallback);
+      values[cell.prop] = cell.hasValue ? cell.value! : this.fallback;
     }
     this.setValue(values as {[K in keyof T]: T[K]|TFallback});
   }
 
 }
 
-export class AsyncTupleMapper<T extends unknown[]> extends BaseAsyncTupleMapper<T> {
+export class AsyncObjectMapper<T extends Record<string, unknown>> extends BaseAsyncObjectMapper<T> {
 
   constructor() {
     super();
   }
 
   protected evaluate(cells: IterableIterator<ValueCell<unknown>>): void {
-    const values: unknown[] = [];
-
+    const values: Record<string, unknown> = {};
     for (let cell of cells) {
       if (!cell.hasValue) return;
-      values.push(cell.value!);
+      values[cell.prop] = cell.value!;
     }
-
     this.setValue(values as T);
   }
 
@@ -125,7 +124,7 @@ class ValueCell<T> {
   private update$ = new Subject<void>();
   private updateSub = new Subscription();
 
-  constructor(value: AsyncOrSyncVal<T>) {
+  constructor(value: AsyncOrSyncVal<T>, public prop: string) {
     if (value instanceof Promise) {
       value = from(value);
     }
