@@ -5,8 +5,8 @@ import {isSubscribable} from "../util/type-guards";
 
 export type AsyncTuple<T extends unknown[]> = {[K in keyof T]: AsyncVal<T[K]>};
 export type AsyncOrSyncTuple<T extends unknown[]> = {[K in keyof T]: AsyncOrSyncVal<T[K]>};
-export type UnwrappedAsyncTuple<T extends AsyncTuple<unknown[]>> = {[K in keyof T]: UnwrappedAsyncVal<T[K]>};
-export type UnwrappedAsyncOrSyncTuple<T extends AsyncOrSyncTuple<unknown[]>> = {[K in keyof T]: UnwrappedAsyncOrSyncVal<T[K]>};
+export type UnwrappedAsyncTuple<T extends AsyncTuple<unknown[]>, TMod = never> = {[K in keyof T]: UnwrappedAsyncVal<T[K], TMod>};
+export type UnwrappedAsyncOrSyncTuple<T extends AsyncOrSyncTuple<unknown[]>, TMod = never> = {[K in keyof T]: UnwrappedAsyncOrSyncVal<T[K], TMod>};
 
 abstract class BaseAsyncTupleMapper<T extends unknown[]> implements Disposable {
 

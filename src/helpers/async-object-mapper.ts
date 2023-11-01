@@ -5,8 +5,8 @@ import {isSubscribable} from "../util/type-guards";
 
 export type AsyncObject<T extends Record<string, unknown>> = {[K in keyof T]: AsyncVal<T[K]>};
 export type AsyncOrSyncObject<T extends Record<string, unknown>> = {[K in keyof T]: AsyncOrSyncVal<T[K]>};
-export type UnwrappedAsyncObject<T extends AsyncObject<Record<string, unknown>>> = {[K in keyof T]: UnwrappedAsyncVal<T[K]>};
-export type UnwrappedAsyncOrSyncObject<T extends AsyncOrSyncObject<Record<string, unknown>>> = {[K in keyof T]: UnwrappedAsyncOrSyncVal<T[K]>};
+export type UnwrappedAsyncObject<T extends AsyncObject<Record<string, unknown>>, TMod = never> = {[K in keyof T]: UnwrappedAsyncVal<T[K], TMod>};
+export type UnwrappedAsyncOrSyncObject<T extends AsyncOrSyncObject<Record<string, unknown>>, TMod = never> = {[K in keyof T]: UnwrappedAsyncOrSyncVal<T[K], TMod>};
 
 abstract class BaseAsyncObjectMapper<T extends Record<string, unknown>> implements Disposable {
 
