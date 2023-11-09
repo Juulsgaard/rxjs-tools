@@ -82,6 +82,12 @@ export class ObservableSet<T> implements ReadonlyObservableSet<T> {
 
   set(values: T[] = []): boolean {
     if (!values.length && !this.size) return false;
+
+    if (values.length === this._set.size) {
+      const same = values.every(x => this.has(x));
+      if (same) return false;
+    }
+
     this._set$.next(new Set<T>(values));
     return true;
   }
