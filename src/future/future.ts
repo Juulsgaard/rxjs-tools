@@ -1,11 +1,12 @@
 import {
-  BehaviorSubject, combineLatest, Observable, Observer, of, pairwise, Subscribable, Subscription, switchMap,
-  take, Unsubscribable
+  BehaviorSubject, combineLatest, Observable, Observer, of, pairwise, Subscribable, Subscription, switchMap, take,
+  Unsubscribable
 } from "rxjs";
 import {distinctUntilChanged, filter, first, map} from "rxjs/operators";
 import {FutureConfig} from "./future-config";
 import {FutureEmpty, FutureError, FutureLoading, FutureUnion, FutureValue} from "./future-types";
 import {cache} from "../operators/cache";
+import {IValueLoadingState} from "../loading-state/value-loading-state.interface";
 
 export class Future<T> implements Subscribable<FutureUnion<T>> {
 
@@ -56,6 +57,11 @@ export class Future<T> implements Subscribable<FutureUnion<T>> {
     return new Future<any>(of(undefined), of(false), of(false));
   }
 
+  /**
+   * Create a Future from an Observable
+   * @param req
+   * @constructor
+   */
   static FromRequest<T>(req: Observable<T>): Future<T> {
     const val$ = new BehaviorSubject<T | undefined>(undefined);
     const err$ = new BehaviorSubject<Error | undefined>(undefined);
@@ -77,6 +83,19 @@ export class Future<T> implements Subscribable<FutureUnion<T>> {
       }
     });
     return new Future<T>(val$, load$, err$);
+  }
+
+  /**
+   * Create a Future from a LoadingState
+   * @param loading
+   * @constructor
+   */
+  static FromLoadingState<T>(loading: IValueLoadingState<T>): Future<T> {
+    return new Future<T>(
+      loading.result$,
+      loading.loading$,
+      loading.failed$.pipe(switchMap(failed => failed ? loading.error$ : of(undefined)))
+    );
   }
 
   /** The state of the Future */
