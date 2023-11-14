@@ -17,8 +17,8 @@ abstract class BaseAsyncObjectMapper<T extends Record<string, unknown>> implemen
 
   private current?: Map<AsyncVal<unknown>|string, ValueCell<unknown>>;
 
-  update(values: AsyncOrSyncObject<T>) {
-    if (this.disposed) return;
+  update(values: AsyncOrSyncObject<T>): boolean {
+    if (this.disposed) return false;
 
     this.current?.forEach(x => x.reset());
 
@@ -33,9 +33,11 @@ abstract class BaseAsyncObjectMapper<T extends Record<string, unknown>> implemen
     this.current?.forEach(x => x.dispose());
     this.current = newCells;
 
-    this.evaluate(newCells.values());
+    const emitted = this.evaluate(newCells.values());
 
     this.current.forEach(c => c.onUpdate(() => this.evaluate(newCells.values())));
+
+    return emitted;
   }
 
   private getCell(value: AsyncOrSyncVal<unknown>, prop: string): [string|AsyncVal<unknown>, ValueCell<unknown>] {
@@ -64,7 +66,13 @@ abstract class BaseAsyncObjectMapper<T extends Record<string, unknown>> implemen
     return new ValueCell(val, prop);
   }
 
-  protected abstract evaluate(cells: IterableIterator<ValueCell<unknown>>): void;
+  /**
+   * Extract value from cells
+   * @param cells
+   * @protected
+   * @returns emitted - True if a value was emitted
+   */
+  protected abstract evaluate(cells: IterableIterator<ValueCell<unknown>>): boolean;
 
   protected setValue(value: T) {
     this._values$.next(value);
@@ -87,12 +95,15 @@ export class AsyncObjectFallbackMapper<T extends Record<string, unknown>, TFallb
     super();
   }
 
-  protected evaluate(cells: IterableIterator<ValueCell<unknown>>): void {
+  protected evaluate(cells: IterableIterator<ValueCell<unknown>>): boolean {
     const values: Record<string, unknown> = {};
+
     for (let cell of cells) {
       values[cell.prop] = cell.hasValue ? cell.value! : this.fallback;
     }
+
     this.setValue(values as {[K in keyof T]: T[K]|TFallback});
+    return true;
   }
 
 }
@@ -103,13 +114,16 @@ export class AsyncObjectMapper<T extends Record<string, unknown>> extends BaseAs
     super();
   }
 
-  protected evaluate(cells: IterableIterator<ValueCell<unknown>>): void {
+  protected evaluate(cells: IterableIterator<ValueCell<unknown>>): boolean {
     const values: Record<string, unknown> = {};
+
     for (let cell of cells) {
-      if (!cell.hasValue) return;
+      if (!cell.hasValue) return false;
       values[cell.prop] = cell.value!;
     }
+
     this.setValue(values as T);
+    return true;
   }
 
 }

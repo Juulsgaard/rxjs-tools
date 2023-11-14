@@ -17,8 +17,13 @@ abstract class BaseAsyncTupleMapper<T extends unknown[]> implements Disposable {
 
   private current?: Map<AsyncVal<unknown>|number, ValueCell<unknown>>;
 
-  update(values: AsyncOrSyncTuple<T>) {
-    if (this.disposed) return;
+  /**
+   * Update the mapper with new input values
+   * @param values
+   * @returns emitted - True is a value was synchronously emitted
+   */
+  update(values: AsyncOrSyncTuple<T>): boolean {
+    if (this.disposed) return false;
 
     this.current?.forEach(x => x.reset());
 
@@ -33,9 +38,11 @@ abstract class BaseAsyncTupleMapper<T extends unknown[]> implements Disposable {
     this.current?.forEach(x => x.dispose());
     this.current = newCells;
 
-    this.evaluate(newCells.values());
+    const emitted = this.evaluate(newCells.values());
 
     this.current.forEach(c => c.onUpdate(() => this.evaluate(newCells.values())));
+
+    return emitted;
   }
 
   private getCell(value: AsyncOrSyncVal<unknown>, index: number): [number|AsyncVal<unknown>, ValueCell<unknown>] {
@@ -63,7 +70,13 @@ abstract class BaseAsyncTupleMapper<T extends unknown[]> implements Disposable {
     return new ValueCell(val);
   }
 
-  protected abstract evaluate(cells: IterableIterator<ValueCell<unknown>>): void;
+  /**
+   * Extract value from cells
+   * @param cells
+   * @protected
+   * @returns emitted - True if a value was emitted
+   */
+  protected abstract evaluate(cells: IterableIterator<ValueCell<unknown>>): boolean;
 
   protected setValue(value: T) {
     this._values$.next(value);
@@ -86,12 +99,13 @@ export class AsyncTupleFallbackMapper<T extends unknown[], TFallback> extends Ba
     super();
   }
 
-  protected evaluate(cells: IterableIterator<ValueCell<unknown>>): void {
+  protected evaluate(cells: IterableIterator<ValueCell<unknown>>): boolean {
     const values: unknown[] = [];
     for (let cell of cells) {
       values.push(cell.hasValue ? cell.value! : this.fallback);
     }
     this.setValue(values as {[K in keyof T]: T[K]|TFallback});
+    return true;
   }
 
 }
@@ -102,15 +116,16 @@ export class AsyncTupleMapper<T extends unknown[]> extends BaseAsyncTupleMapper<
     super();
   }
 
-  protected evaluate(cells: IterableIterator<ValueCell<unknown>>): void {
+  protected evaluate(cells: IterableIterator<ValueCell<unknown>>): boolean {
     const values: unknown[] = [];
 
     for (let cell of cells) {
-      if (!cell.hasValue) return;
+      if (!cell.hasValue) return false;
       values.push(cell.value!);
     }
 
     this.setValue(values as T);
+    return true;
   }
 
 }

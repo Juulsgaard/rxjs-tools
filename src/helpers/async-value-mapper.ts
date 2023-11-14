@@ -64,21 +64,29 @@ abstract class BaseAsyncValueMapper<T> implements Disposable {
     this.onError?.();
   }
 
+  /**
+   * Update the mapper with a new input value
+   * @param value
+   * @returns emitted - True is a value was synchronously emitted
+   */
   update(value: AsyncOrSyncVal<T>) {
     if (this.disposed) return;
     this.sub?.unsubscribe();
 
     if (value instanceof Promise) {
-      this.sub = this.mapObservable(from(value));
-      return;
+      value = from(value);
     }
 
     if (value instanceof Observable || isSubscribable(value)) {
+      let emitted = false;
+      const sub = this.value$.subscribe(() => emitted = true);
       this.sub = this.mapObservable(value);
-      return;
+      sub.unsubscribe();
+      return emitted;
     }
 
     this.setValue(value);
+    return true;
   }
 
   abstract mapObservable(value$: Subscribable<T>): Unsubscribable;
