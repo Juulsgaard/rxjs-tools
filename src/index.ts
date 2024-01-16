@@ -2,7 +2,7 @@
 export * from './future/future-types';
 export * from './future/future';
 
-export * from './helpers/scheduler';
+export * from './helpers/observable-queue';
 export * from './helpers/observable-set';
 export * from './helpers/repetition';
 export * from './helpers/async-value-mapper';

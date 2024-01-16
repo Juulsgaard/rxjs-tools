@@ -1,7 +1,7 @@
 lockfileVersion: 5.4
 
 specifiers:
-  '@juulsgaard/ts-tools': 1.4.2
+  '@juulsgaard/ts-tools': 1.4.3
   '@types/jest': ^29.5.1
   cross-env: ^7.0.3
   jest: ^29.5.0
@@ -12,7 +12,7 @@ specifiers:
   typescript: ~5.0.4
 
 devDependencies:
-  '@juulsgaard/ts-tools': 1.4.2_typescript@5.0.4
+  '@juulsgaard/ts-tools': 1.4.3_typescript@5.0.4
   '@types/jest': 29.5.1
   cross-env: 7.0.3
   jest: 29.5.0
@@ -656,8 +656,8 @@ packages:
       '@jridgewell/sourcemap-codec': 1.4.14
     dev: true
 
-  /@juulsgaard/ts-tools/1.4.2_typescript@5.0.4:
-    resolution: {integrity: sha512-x/YPj34CDUT4i4uSavAxoshmvP18wJzuVMc3TF5BR8l2+I4tRY5NG9yK2HebeSMU+Ls0dcdiFJ2slPXSApkndg==}
+  /@juulsgaard/ts-tools/1.4.3_typescript@5.0.4:
+    resolution: {integrity: sha512-2eSseJJ2SUj6H3foK6eA6o3ucU/43B0T2WIyKfbZs4NG4ApPCR8rPbsF4/tZlQZA+6wAECjSrhHIhxIMmygs+A==}
     peerDependencies:
       typescript: ~5.0.4
     dependencies:
