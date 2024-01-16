@@ -5,9 +5,17 @@ import {arrToLookup, Disposable} from "@juulsgaard/ts-tools";
 
 export class ObservableQueue<TData> implements Disposable {
 
-  readonly items$ = new BehaviorSubject<TData[]>([]);
-  get items() {return this.items$.value};
-  private set items(items: TData[]) {this.items$.next(items)}
+  /**
+   * An observable containing the items of the queue
+   */
+  get items$() {return this._items$.asObservable()}
+  private readonly _items$ = new BehaviorSubject<TData[]>([]);
+
+  /**
+   * A list of items in the queue
+   */
+  get items() {return this._items$.value};
+  private set items(items: TData[]) {this._items$.next(items)}
 
   constructor() {
     this.items$.pipe(
@@ -80,10 +88,10 @@ export class ObservableQueue<TData> implements Disposable {
   /**
    * Observable returning the element at the front of the queue
    */
-  front$: Observable<TData|undefined>;
+  readonly front$: Observable<TData|undefined>;
 
   /** Observable returning the current front element and whether it was just added */
-  frontChanges$: Observable<ObservableQueueChange<TData>>;
+  readonly frontChanges$: Observable<ObservableQueueChange<TData>>;
   //</editor-fold>
 
   //<editor-fold desc="Back">
@@ -97,10 +105,10 @@ export class ObservableQueue<TData> implements Disposable {
   /**
    * Observable returning the element at the back of the queue
    */
-  back$: Observable<TData|undefined>;
+  readonly back$: Observable<TData|undefined>;
 
   /** Observable returning the current back element and whether it was just added */
-  backChanges$: Observable<ObservableQueueChange<TData>>;
+  readonly backChanges$: Observable<ObservableQueueChange<TData>>;
   //</editor-fold>
 
   //<editor-fold desc="State">
@@ -109,25 +117,28 @@ export class ObservableQueue<TData> implements Disposable {
     return this.items.length;
   }
   
-  length$: Observable<number>;
+  readonly length$: Observable<number>;
 
   get empty() {
     return this.items.length < 1;
   }
 
-  empty$: Observable<boolean>;
+  readonly empty$: Observable<boolean>;
   //</editor-fold>
 
   //<editor-fold desc="Changes">
+
   /**
    * Emits all updates to the queue
    */
-  updates$ = new Subject<TData[]>();
+  get updates$() {return this._updates$.asObservable()}
+  private readonly _updates$ = new Subject<TData[]>();
   
   /**
    * Emits for every item that is updated in the list
    */
-  itemUpdates$ = new Subject<ObservableQueueItemChange<TData>>();
+  get itemUpdates$() {return this._itemUpdates$.asObservable()};
+  private _itemUpdates$ = new Subject<ObservableQueueItemChange<TData>>();
 
   /**
    * Processes changes to individual items and emits the changes
@@ -137,7 +148,7 @@ export class ObservableQueue<TData> implements Disposable {
    */
   private processChanges(prevList: TData[], nextList: TData[]) {
 
-    this.updates$.next(nextList);
+    this._updates$.next(nextList);
 
     const oldLookup = arrToLookup(prevList, x => x, (_, i) => i) as Map<TData, number[]>;
 
@@ -146,22 +157,22 @@ export class ObservableQueue<TData> implements Disposable {
       const oldIndexes = oldLookup.get(data);
 
       if (!oldIndexes) {
-        this.itemUpdates$.next({item: data, position: i, previousPosition: undefined});
+        this._itemUpdates$.next({item: data, position: i, previousPosition: undefined});
         continue;
       }
 
       const oldIndex = oldIndexes.shift();
       if (oldIndex === undefined) {
-        this.itemUpdates$.next({item: data, position: i, previousPosition: undefined});
+        this._itemUpdates$.next({item: data, position: i, previousPosition: undefined});
         continue;
       }
 
-      this.itemUpdates$.next({item: data, position: i, previousPosition: oldIndex});
+      this._itemUpdates$.next({item: data, position: i, previousPosition: oldIndex});
     }
 
     for (let [data, indices] of oldLookup) {
       for (let index of indices) {
-        this.itemUpdates$.next({item: data, previousPosition: index, position: undefined});
+        this._itemUpdates$.next({item: data, previousPosition: index, position: undefined});
       }
     }
   }
@@ -222,9 +233,9 @@ export class ObservableQueue<TData> implements Disposable {
    * This closes all subjects.
    */
   dispose() {
-    this.items$.complete();
-    this.updates$.complete();
-    this.itemUpdates$.complete();
+    this._items$.complete();
+    this._updates$.complete();
+    this._itemUpdates$.complete();
   }
 }
 

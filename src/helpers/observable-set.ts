@@ -6,13 +6,13 @@ export class ObservableSet<T> implements ReadonlyObservableSet<T> {
   private get _set() {return this._set$.value};
   private _set$: BehaviorSubject<ReadonlySet<T>>;
 
-  value$: Observable<ReadonlySet<T>>;
+  readonly value$: Observable<ReadonlySet<T>>;
   get value() {return this._set}
 
-  size$: Observable<number>;
+  readonly size$: Observable<number>;
   get size() {return this._set.size}
 
-  array$: Observable<T[]>;
+  readonly array$: Observable<T[]>;
   get array() {return Array.from(this.value)};
 
   constructor(values?: T[]) {
