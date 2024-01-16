@@ -5,11 +5,11 @@ import {arrToLookup, Disposable} from "@juulsgaard/ts-tools";
 
 export class ObservableQueue<TData> implements Disposable {
 
+  private readonly _items$ = new BehaviorSubject<TData[]>([]);
   /**
    * An observable containing the items of the queue
    */
-  get items$() {return this._items$.asObservable()}
-  private readonly _items$ = new BehaviorSubject<TData[]>([]);
+  readonly items$ = this._items$.asObservable();
 
   /**
    * A list of items in the queue
@@ -128,17 +128,17 @@ export class ObservableQueue<TData> implements Disposable {
 
   //<editor-fold desc="Changes">
 
+  private readonly _updates$ = new Subject<TData[]>();
   /**
    * Emits all updates to the queue
    */
-  get updates$() {return this._updates$.asObservable()}
-  private readonly _updates$ = new Subject<TData[]>();
-  
+  readonly updates$ = this._updates$.asObservable();
+
+  private _itemUpdates$ = new Subject<ObservableQueueItemChange<TData>>();
   /**
    * Emits for every item that is updated in the list
    */
-  get itemUpdates$() {return this._itemUpdates$.asObservable()};
-  private _itemUpdates$ = new Subject<ObservableQueueItemChange<TData>>();
+  readonly itemUpdates$ = this._itemUpdates$.asObservable();
 
   /**
    * Processes changes to individual items and emits the changes
