@@ -1,4 +1,4 @@
-import {BehaviorSubject, concat, Observable, pairwise, Subject} from "rxjs";
+import {BehaviorSubject, concat, concatMap, from, Observable, pairwise, share, skip} from "rxjs";
 import {distinctUntilChanged, first, map} from "rxjs/operators";
 import {persistentCache} from "../operators/cache";
 import {arrToLookup, Disposable} from "@juulsgaard/ts-tools";
@@ -18,9 +18,15 @@ export class ObservableQueue<TData> implements Disposable {
   private set items(items: TData[]) {this._items$.next(items)}
 
   constructor() {
-    this.items$.pipe(
-      pairwise()
-    ).subscribe(([prevList, nextList]) => this.processChanges(prevList, nextList));
+
+    this.updates$ = this.items$.pipe(skip(1));
+
+    this.itemUpdates$ = this.items$.pipe(
+      pairwise(),
+      map(([last, next]) => this.processChanges(last, next)),
+      concatMap(x => from(x)),
+      share()
+    );
 
     //<editor-fold desc="Front">
     this.front$ = this.items$.pipe(
@@ -128,17 +134,15 @@ export class ObservableQueue<TData> implements Disposable {
 
   //<editor-fold desc="Changes">
 
-  private readonly _updates$ = new Subject<TData[]>();
   /**
    * Emits all updates to the queue
    */
-  readonly updates$ = this._updates$.asObservable();
+  readonly updates$: Observable<TData[]>;
 
-  private _itemUpdates$ = new Subject<ObservableQueueItemChange<TData>>();
   /**
    * Emits for every item that is updated in the list
    */
-  readonly itemUpdates$ = this._itemUpdates$.asObservable();
+  readonly itemUpdates$: Observable<ObservableQueueItemChange<TData>>;
 
   /**
    * Processes changes to individual items and emits the changes
@@ -146,9 +150,7 @@ export class ObservableQueue<TData> implements Disposable {
    * @param nextList
    * @private
    */
-  private processChanges(prevList: TData[], nextList: TData[]) {
-
-    this._updates$.next(nextList);
+  private *processChanges(prevList: TData[], nextList: TData[]): Generator<ObservableQueueItemChange<TData>> {
 
     const oldLookup = arrToLookup(prevList, x => x, (_, i) => i) as Map<TData, number[]>;
 
@@ -157,22 +159,22 @@ export class ObservableQueue<TData> implements Disposable {
       const oldIndexes = oldLookup.get(data);
 
       if (!oldIndexes) {
-        this._itemUpdates$.next({item: data, position: i, previousPosition: undefined});
+        yield {item: data, position: i, previousPosition: undefined};
         continue;
       }
 
       const oldIndex = oldIndexes.shift();
       if (oldIndex === undefined) {
-        this._itemUpdates$.next({item: data, position: i, previousPosition: undefined});
+        yield {item: data, position: i, previousPosition: undefined};
         continue;
       }
 
-      this._itemUpdates$.next({item: data, position: i, previousPosition: oldIndex});
+      yield {item: data, position: i, previousPosition: oldIndex};
     }
 
     for (let [data, indices] of oldLookup) {
       for (let index of indices) {
-        this._itemUpdates$.next({item: data, previousPosition: index, position: undefined});
+        yield {item: data, previousPosition: index, position: undefined};
       }
     }
   }
@@ -234,8 +236,6 @@ export class ObservableQueue<TData> implements Disposable {
    */
   dispose() {
     this._items$.complete();
-    this._updates$.complete();
-    this._itemUpdates$.complete();
   }
 }
 
