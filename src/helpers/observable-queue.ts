@@ -1,4 +1,4 @@
-import {BehaviorSubject, concat, concatMap, concatWith, from, Observable, pairwise, share, skip} from "rxjs";
+import {BehaviorSubject, concat, concatMap, from, Observable, pairwise, share, skip} from "rxjs";
 import {distinctUntilChanged, first, map} from "rxjs/operators";
 import {persistentCache} from "../operators/cache";
 import {arrToLookup, Disposable} from "@juulsgaard/ts-tools";
@@ -29,9 +29,12 @@ export class ObservableQueue<TData> implements Disposable {
       share()
     );
 
-    this.itemDelta$ = from(this.processChanges([], this.items)).pipe(
-      concatWith(this.itemUpdates$)
-    );
+    this.itemDelta$ = new Observable<ObservableQueueItemChange<TData>>(subscriber => {
+      for (let change of this.processChanges([], this.items)) {
+        subscriber.next(change);
+      }
+      return this.itemUpdates$.subscribe(subscriber);
+    });
     //</editor-fold>
 
     //<editor-fold desc="Front">

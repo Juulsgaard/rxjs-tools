@@ -1,6 +1,5 @@
 import {
-  BehaviorSubject, concatMap, concatWith, from, Observable, Observer, pairwise, share, skip, Subscribable,
-  Unsubscribable
+  BehaviorSubject, concatMap, from, Observable, Observer, pairwise, share, skip, Subscribable, Unsubscribable
 } from "rxjs";
 import {distinctUntilChanged, map} from "rxjs/operators";
 
@@ -35,9 +34,12 @@ export class ObservableSet<T> implements ReadonlyObservableSet<T> {
       share()
     );
 
-    this.itemDelta$ = from(this.processChanges(new Set(), this.value)).pipe(
-      concatWith(this.itemUpdates$)
-    );
+    this.itemDelta$ = new Observable<ObservableSetItemChange<T>>(subscriber => {
+      for (let change of this.processChanges(new Set(), this.value)) {
+        subscriber.next(change);
+      }
+      return this.itemUpdates$.subscribe(subscriber);
+    });
     //</editor-fold>
 
     //<editor-fold desc="State">
