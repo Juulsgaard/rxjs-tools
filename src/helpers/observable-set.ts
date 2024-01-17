@@ -1,4 +1,7 @@
-import {BehaviorSubject, Observable, Observer, Subscribable, Unsubscribable} from "rxjs";
+import {
+  BehaviorSubject, concatMap, concatWith, from, Observable, Observer, pairwise, share, skip, Subscribable,
+  Unsubscribable
+} from "rxjs";
 import {distinctUntilChanged, map} from "rxjs/operators";
 
 export class ObservableSet<T> implements ReadonlyObservableSet<T> {
@@ -12,14 +15,36 @@ export class ObservableSet<T> implements ReadonlyObservableSet<T> {
   readonly size$: Observable<number>;
   get size() {return this._set.size}
 
+  readonly empty$: Observable<boolean>;
+  get empty() {return this.size <= 0}
+
   readonly array$: Observable<T[]>;
   get array() {return Array.from(this.value)};
 
   constructor(values?: T[]) {
     this._set$ = new BehaviorSubject<ReadonlySet<T>>(new Set<T>(values));
     this.value$ = this._set$.asObservable();
+
+    //<editor-fold desc="Changes">
+    this.updates$ = this.value$.pipe(skip(1));
+
+    this.itemUpdates$ = this.value$.pipe(
+      pairwise(),
+      map(([last, next]) => this.processChanges(last, next)),
+      concatMap(x => from(x)),
+      share()
+    );
+
+    this.itemDelta$ = from(this.processChanges(new Set(), this.value)).pipe(
+      concatWith(this.itemUpdates$)
+    );
+    //</editor-fold>
+
+    //<editor-fold desc="State">
     this.size$ = this.value$.pipe(map(x => x.size), distinctUntilChanged());
+    this.empty$ = this.size$.pipe(map(x => x <= 0), distinctUntilChanged());
     this.array$ = this.value$.pipe(map(x => Array.from(x)));
+    //</editor-fold>
   }
 
   [Symbol.iterator](): IterableIterator<T> {
@@ -141,6 +166,45 @@ export class ObservableSet<T> implements ReadonlyObservableSet<T> {
     modify(set);
     this._set$.next(set);
   }
+
+  //<editor-fold desc="Changes">
+  /**
+   * Emits all updates to the set
+   */
+  readonly updates$: Observable<ReadonlySet<T>>;
+
+  /**
+   * Emits for every item that is added/removed in the set
+   */
+  readonly itemUpdates$: Observable<ObservableSetItemChange<T>>;
+
+  /**
+   * Emits for every item that is added/removed in the list, including the changes from an empty set to the current state
+   */
+  readonly itemDelta$: Observable<ObservableSetItemChange<T>>;
+
+  /**
+   * Processes changes to individual items
+   * @private
+   */
+  private *processChanges(prevSet: ReadonlySet<T>, nextSet: ReadonlySet<T>): Generator<ObservableSetItemChange<T>> {
+
+    const old = new Set<T>(prevSet);
+
+    for (let item of nextSet) {
+      if (old.has(item)) {
+        old.delete(item);
+        continue;
+      }
+
+      yield {item, change: 'added'};
+    }
+
+    for (let item of old) {
+      yield {item, change: 'removed'};
+    }
+  }
+  //</editor-fold>
 }
 
 export interface ReadonlyObservableSet<T> extends Iterable<T>, Subscribable<ReadonlySet<T>> {
@@ -151,4 +215,9 @@ export interface ReadonlyObservableSet<T> extends Iterable<T>, Subscribable<Read
   readonly array: ReadonlyArray<T>;
   readonly array$: Observable<ReadonlyArray<T>>;
   has(value: T): boolean;
+}
+
+export interface ObservableSetItemChange<T> {
+  item: T;
+  change: 'added'|'removed';
 }

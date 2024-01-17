@@ -1,4 +1,4 @@
-import {BehaviorSubject, concat, concatMap, from, Observable, pairwise, share, skip} from "rxjs";
+import {BehaviorSubject, concat, concatMap, concatWith, from, Observable, pairwise, share, skip} from "rxjs";
 import {distinctUntilChanged, first, map} from "rxjs/operators";
 import {persistentCache} from "../operators/cache";
 import {arrToLookup, Disposable} from "@juulsgaard/ts-tools";
@@ -19,6 +19,7 @@ export class ObservableQueue<TData> implements Disposable {
 
   constructor() {
 
+    //<editor-fold desc="Changes">
     this.updates$ = this.items$.pipe(skip(1));
 
     this.itemUpdates$ = this.items$.pipe(
@@ -27,6 +28,11 @@ export class ObservableQueue<TData> implements Disposable {
       concatMap(x => from(x)),
       share()
     );
+
+    this.itemDelta$ = from(this.processChanges([], this.items)).pipe(
+      concatWith(this.itemUpdates$)
+    );
+    //</editor-fold>
 
     //<editor-fold desc="Front">
     this.front$ = this.items$.pipe(
@@ -76,7 +82,7 @@ export class ObservableQueue<TData> implements Disposable {
     );
     
     this.empty$ = this.length$.pipe(
-      map(x => x > 0),
+      map(x => x <= 0),
       distinctUntilChanged(),
       persistentCache(),
     );
@@ -126,7 +132,7 @@ export class ObservableQueue<TData> implements Disposable {
   readonly length$: Observable<number>;
 
   get empty() {
-    return this.items.length < 1;
+    return this.items.length <= 0;
   }
 
   readonly empty$: Observable<boolean>;
@@ -145,7 +151,12 @@ export class ObservableQueue<TData> implements Disposable {
   readonly itemUpdates$: Observable<ObservableQueueItemChange<TData>>;
 
   /**
-   * Processes changes to individual items and emits the changes
+   * Emits for every item that is updated in the list, including the changes from an empty list to the current state
+   */
+  readonly itemDelta$: Observable<ObservableQueueItemChange<TData>>;
+
+  /**
+   * Processes changes to individual items
    * @param prevList
    * @param nextList
    * @private
