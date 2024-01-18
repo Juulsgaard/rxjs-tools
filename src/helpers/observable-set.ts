@@ -1,7 +1,7 @@
 import {
   BehaviorSubject, concatMap, from, Observable, Observer, pairwise, share, skip, Subscribable, Unsubscribable
 } from "rxjs";
-import {distinctUntilChanged, map} from "rxjs/operators";
+import {distinctUntilChanged, filter, map} from "rxjs/operators";
 
 export class ObservableSet<T> implements ReadonlyObservableSet<T> {
 
@@ -34,6 +34,18 @@ export class ObservableSet<T> implements ReadonlyObservableSet<T> {
       share()
     );
 
+    this.itemRemoved$ = this.itemUpdates$.pipe(
+      filter(x => x.change === 'removed'),
+      map(x => x.item),
+      share()
+    );
+
+    this.itemAdded$ = this.itemUpdates$.pipe(
+      filter(x => x.change === 'added'),
+      map(x => x.item),
+      share()
+    );
+
     this.itemDelta$ = new Observable<ObservableSetItemChange<T>>(subscriber => {
       for (let change of this.processChanges(new Set(), this.value)) {
         subscriber.next(change);
@@ -61,6 +73,7 @@ export class ObservableSet<T> implements ReadonlyObservableSet<T> {
     return new Set<T>(this._set);
   }
 
+  //<editor-fold desc="Actions">
   filter(whitelist: T[]|ReadonlySet<T>|undefined): boolean {
     const length = whitelist && 'size' in whitelist ? whitelist.size : whitelist?.length;
 
@@ -168,21 +181,22 @@ export class ObservableSet<T> implements ReadonlyObservableSet<T> {
     modify(set);
     this._set$.next(set);
   }
+  //</editor-fold>
 
   //<editor-fold desc="Changes">
-  /**
-   * Emits all updates to the set
-   */
+  /** Emits all updates to the set */
   readonly updates$: Observable<ReadonlySet<T>>;
 
-  /**
-   * Emits for every item that is added/removed in the set
-   */
+  /** Emits for every item that is added/removed in the set */
   readonly itemUpdates$: Observable<ObservableSetItemChange<T>>;
 
-  /**
-   * Emits for every item that is added/removed in the list, including the changes from an empty set to the current state
-   */
+  /** Emits for every item that is removed from the set */
+  readonly itemRemoved$: Observable<T>;
+
+  /** Emits for every item that is added to the set */
+  readonly itemAdded$: Observable<T>;
+
+  /** Emits for every item that is added/removed in the list, including the changes from an empty set to the current state */
   readonly itemDelta$: Observable<ObservableSetItemChange<T>>;
 
   /**

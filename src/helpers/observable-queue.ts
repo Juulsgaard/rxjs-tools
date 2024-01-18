@@ -1,23 +1,43 @@
 import {BehaviorSubject, concat, concatMap, from, Observable, pairwise, share, skip} from "rxjs";
-import {distinctUntilChanged, first, map} from "rxjs/operators";
+import {distinctUntilChanged, filter, first, map} from "rxjs/operators";
 import {persistentCache} from "../operators/cache";
 import {arrToLookup, Disposable} from "@juulsgaard/ts-tools";
 
 export class ObservableQueue<TData> implements Disposable {
 
   private readonly _items$ = new BehaviorSubject<TData[]>([]);
-  /**
-   * An observable containing the items of the queue
-   */
+  /** An observable containing the items of the queue */
   readonly items$ = this._items$.asObservable();
 
-  /**
-   * A list of items in the queue
-   */
-  get items() {return this._items$.value};
-  private set items(items: TData[]) {this._items$.next(items)}
+  /** A list of items in the queue */
+  get items() {
+    return this._items$.value
+  };
 
-  constructor() {
+  private set items(items: TData[]) {
+    this._items$.next(items)
+  }
+
+  get length() {
+    return this.items.length;
+  }
+
+  readonly length$: Observable<number>;
+
+  get empty() {
+    return this.items.length <= 0;
+  }
+
+  readonly empty$: Observable<boolean>;
+
+  private _maxSize: number | undefined;
+  get maxSize() {
+    return this._maxSize
+  };
+
+  constructor(options?: ObservableQueueOptions) {
+
+    this._maxSize = options?.size;
 
     //<editor-fold desc="Changes">
     this.updates$ = this.items$.pipe(skip(1));
@@ -26,6 +46,18 @@ export class ObservableQueue<TData> implements Disposable {
       pairwise(),
       map(([last, next]) => this.processChanges(last, next)),
       concatMap(x => from(x)),
+      share()
+    );
+
+    this.itemRemoved$ = this.itemUpdates$.pipe(
+      filter(x => x.previousPosition !== undefined && x.position === undefined),
+      map(x => x.item),
+      share()
+    );
+
+    this.itemAdded$ = this.itemUpdates$.pipe(
+      filter(x => x.previousPosition === undefined && x.position !== undefined),
+      map(x => x.item),
       share()
     );
 
@@ -46,11 +78,15 @@ export class ObservableQueue<TData> implements Disposable {
 
     const firstFront$ = this.front$.pipe(
       first(),
-      map(item => ({added: !!item, item}))
+      map(item => (
+        {added: !!item, item}
+      ))
     );
     const frontChanges$ = this.items$.pipe(
       pairwise(),
-      map(([oldItems, newItems]) => ({added: newItems.length > oldItems.length, item: newItems.at(0)}))
+      map(([oldItems, newItems]) => (
+        {added: newItems.length > oldItems.length, item: newItems.at(0)}
+      ))
     );
     this.frontChanges$ = concat(firstFront$, frontChanges$).pipe(
       distinctUntilChanged((prev, next) => prev.item === next.item)
@@ -66,11 +102,15 @@ export class ObservableQueue<TData> implements Disposable {
 
     const firstBack$ = this.back$.pipe(
       first(),
-      map(item => ({added: !!item, item}))
+      map(item => (
+        {added: !!item, item}
+      ))
     );
     const backChanges$ = this.items$.pipe(
       pairwise(),
-      map(([oldItems, newItems]) => ({added: newItems.length > oldItems.length, item: newItems.at(-1)}))
+      map(([oldItems, newItems]) => (
+        {added: newItems.length > oldItems.length, item: newItems.at(-1)}
+      ))
     );
     this.backChanges$ = concat(firstBack$, backChanges$).pipe(
       distinctUntilChanged((prev, next) => prev.item === next.item)
@@ -83,7 +123,7 @@ export class ObservableQueue<TData> implements Disposable {
       distinctUntilChanged(),
       persistentCache(),
     );
-    
+
     this.empty$ = this.length$.pipe(
       map(x => x <= 0),
       distinctUntilChanged(),
@@ -103,7 +143,7 @@ export class ObservableQueue<TData> implements Disposable {
   /**
    * Observable returning the element at the front of the queue
    */
-  readonly front$: Observable<TData|undefined>;
+  readonly front$: Observable<TData | undefined>;
 
   /** Observable returning the current front element and whether it was just added */
   readonly frontChanges$: Observable<ObservableQueueChange<TData>>;
@@ -120,42 +160,27 @@ export class ObservableQueue<TData> implements Disposable {
   /**
    * Observable returning the element at the back of the queue
    */
-  readonly back$: Observable<TData|undefined>;
+  readonly back$: Observable<TData | undefined>;
 
   /** Observable returning the current back element and whether it was just added */
   readonly backChanges$: Observable<ObservableQueueChange<TData>>;
   //</editor-fold>
 
-  //<editor-fold desc="State">
-
-  get length() {
-    return this.items.length;
-  }
-  
-  readonly length$: Observable<number>;
-
-  get empty() {
-    return this.items.length <= 0;
-  }
-
-  readonly empty$: Observable<boolean>;
-  //</editor-fold>
-
   //<editor-fold desc="Changes">
 
-  /**
-   * Emits all updates to the queue
-   */
+  /** Emits all updates to the queue */
   readonly updates$: Observable<TData[]>;
 
-  /**
-   * Emits for every item that is updated in the list
-   */
+  /** Emits for every item that is updated in the list */
   readonly itemUpdates$: Observable<ObservableQueueItemChange<TData>>;
 
-  /**
-   * Emits for every item that is updated in the list, including the changes from an empty list to the current state
-   */
+  /** Emits for every item that is removed from the list */
+  readonly itemRemoved$: Observable<TData>;
+
+  /** Emits for every item that is added to the list */
+  readonly itemAdded$: Observable<TData>;
+
+  /** Emits for every item that is updated in the list, including the changes from an empty list to the current state */
   readonly itemDelta$: Observable<ObservableQueueItemChange<TData>>;
 
   /**
@@ -164,7 +189,7 @@ export class ObservableQueue<TData> implements Disposable {
    * @param nextList
    * @private
    */
-  private *processChanges(prevList: TData[], nextList: TData[]): Generator<ObservableQueueItemChange<TData>> {
+  private* processChanges(prevList: TData[], nextList: TData[]): Generator<ObservableQueueItemChange<TData>> {
 
     const oldLookup = arrToLookup(prevList, x => x, (_, i) => i) as Map<TData, number[]>;
 
@@ -192,6 +217,7 @@ export class ObservableQueue<TData> implements Disposable {
       }
     }
   }
+
   //</editor-fold>
 
   //<editor-fold desc="Actions">
@@ -212,27 +238,94 @@ export class ObservableQueue<TData> implements Disposable {
   /**
    * Remove the front element from the queue and return it
    */
-  popItem(): TData|undefined {
+  dequeue(): TData | undefined;
+  /**
+   * Remove the front x elements from the queue and return them
+   * @param count - The amount of elements to remove
+   */
+  dequeue(count: number): TData[];
+  dequeue(count?: number): TData | TData[] | undefined {
+
+    if (count !== undefined) {
+      if (count < 1) return [];
+      if (!this.items.length) return [];
+      const items = this.items.slice(0, count);
+      this.items = this.items.slice(count);
+      return items;
+    }
+
     if (!this.items.length) return undefined;
-    const item = this.items[0];
+    const item = this.items.at(0);
     this.items = this.items.slice(1);
     return item;
   }
 
   /**
-   * Add item to the end of the scheduler queue
-   * @param item
+   * Remove the back element from the queue and return it
    */
-  enqueue(item: TData): void {
-    this.items = [...this.items, item];
+  removeFromBack(): TData | undefined;
+  /**
+   * Remove the back x elements from the queue and return it
+   * @param count - The amount of elements to remove
+   */
+  removeFromBack(count: number): TData[];
+  removeFromBack(count?: number): TData | TData[] | undefined {
+
+    if (count !== undefined) {
+      if (count < 1) return [];
+      if (!this.items.length) return [];
+      const start = count * -1;
+      const items = this.items.slice(start);
+      this.items = this.items.slice(0, start);
+      return items;
+    }
+
+    if (!this.items.length) return undefined;
+    const item = this.items.at(-1);
+    this.items = this.items.slice(0, -1);
+    return item;
   }
 
   /**
-   * Add item to the front of the scheduler queue
-   * @param item
+   * Add item to the back of the queue
+   * @param item - Item to add
    */
-  push(item: TData): void {
-    this.items = [item, ...this.items];
+  enqueue(item: TData): void;
+  /**
+   * Add items to the back of the queue
+   * @param items - Items to add
+   */
+  enqueue(...items: TData[]): void;
+  enqueue(...items: TData[]): void {
+    let list = [...this.items, ...items];
+
+    if (this.maxSize !== undefined && list.length > this.maxSize) {
+      const delta = list.length - this.maxSize;
+      list = list.slice(delta);
+    }
+
+    this.items = list;
+  }
+
+  /**
+   * Add item to the front of the queue
+   * @param item - Item to add
+   */
+  addToFront(item: TData): void;
+  /**
+   * Add items to the front of the queue
+   * @param items - Items to add
+   */
+  addToFront(...items: TData[]): void;
+  addToFront(...items: TData[]): void {
+    let list = [...items, ...this.items];
+
+    if (this.maxSize !== undefined && list.length > this.maxSize) {
+      const delta = list.length - this.maxSize;
+      list = list.slice(0, -delta);
+    }
+
+    this.items = list;
   }
 
   /**
@@ -242,7 +335,28 @@ export class ObservableQueue<TData> implements Disposable {
   contains(item: TData) {
     return this.items.includes(item);
   }
+
+  /**
+   * Remove all elements from the set
+   */
+  clear() {
+    this.items = [];
+  }
+
   //</editor-fold>
+
+  /**
+   * Change the max size of the queue
+   * @param size - The new max size
+   */
+  setMaxSize(size: number | undefined) {
+    this._maxSize = size;
+
+    if (size === undefined || this.length <= size) return;
+
+    const delta = this.length - size;
+    this.items = this.items.slice(delta);
+  }
 
   /**
    * Dispose of the Scheduler.
@@ -251,6 +365,10 @@ export class ObservableQueue<TData> implements Disposable {
   dispose() {
     this._items$.complete();
   }
+}
+
+export interface ObservableQueueOptions {
+  size?: number | undefined;
 }
 
 export interface ObservableQueueChange<T> {
