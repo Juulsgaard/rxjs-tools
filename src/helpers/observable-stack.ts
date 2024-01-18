@@ -3,13 +3,13 @@ import {distinctUntilChanged, filter, map} from "rxjs/operators";
 import {cache, persistentCache} from "../operators/cache";
 import {arrToLookup, Disposable} from "@juulsgaard/ts-tools";
 
-export class ObservableQueue<T> implements Disposable {
+export class ObservableStack<T> implements Disposable {
 
   private readonly _items$ = new BehaviorSubject<T[]>([]);
-  /** An observable containing the items of the queue */
+  /** An observable containing the items of the stack from bottom to top */
   readonly items$ = this._items$.asObservable();
 
-  /** A list of items in the queue */
+  /** A list of items in the stack from bottom to top */
   get items() {
     return this._items$.value
   };
@@ -18,26 +18,13 @@ export class ObservableQueue<T> implements Disposable {
     this._items$.next(items)
   }
 
-  get length() {
-    return this.items.length;
-  }
-
+  get length() {return this.items.length;}
   readonly length$: Observable<number>;
 
-  get empty() {
-    return this.items.length <= 0;
-  }
-
+  get empty() {return this.items.length <= 0;}
   readonly empty$: Observable<boolean>;
 
-  private _maxSize: number | undefined;
-  get maxSize() {
-    return this._maxSize
-  };
-
-  constructor(options?: ObservableQueueOptions) {
-
-    this._maxSize = options?.size;
+  constructor() {
 
     //<editor-fold desc="Changes">
     this.updates$ = this.items$.pipe(skip(1));
@@ -61,7 +48,7 @@ export class ObservableQueue<T> implements Disposable {
       share()
     );
 
-    this.itemDelta$ = new Observable<ObservableQueueItemChange<T>>(subscriber => {
+    this.itemDelta$ = new Observable<ObservableStackItemChange<T>>(subscriber => {
       for (let change of this.processChanges([], this.items)) {
         subscriber.next(change);
       }
@@ -69,18 +56,18 @@ export class ObservableQueue<T> implements Disposable {
     });
     //</editor-fold>
 
-    //<editor-fold desc="Front">
-    this.front$ = this.items$.pipe(
-      map(x => x.at(0)),
+    //<editor-fold desc="Top">
+    this.top$ = this.items$.pipe(
+      map(x => x.at(-1)),
       distinctUntilChanged(),
       cache(),
     );
 
-    this.frontDelta$ = this.items$.pipe(
+    this.topDelta$ = this.items$.pipe(
       startWith([] as T[]),
       pairwise(),
       map(([prevList, nextList]) => {
-        const item = nextList.at(0);
+        const item = nextList.at(-1);
         return {item, added: !item ? false : prevList.includes(item)};
       }),
       distinctUntilChanged((prev, next) => prev.item === next.item),
@@ -88,18 +75,18 @@ export class ObservableQueue<T> implements Disposable {
     );
     //</editor-fold>
 
-    //<editor-fold desc="Back">
-    this.back$ = this.items$.pipe(
-      map(x => x.at(-1)),
+    //<editor-fold desc="Bottom">
+    this.bottom$ = this.items$.pipe(
+      map(x => x.at(0)),
       distinctUntilChanged(),
-      cache(),
+      persistentCache(),
     );
 
-    this.backDelta$ = this.items$.pipe(
+    this.bottomDelta$ = this.items$.pipe(
       startWith([] as T[]),
       pairwise(),
       map(([prevList, nextList]) => {
-        const item = nextList.at(-1);
+        const item = nextList.at(0);
         return {item, added: !item ? false : prevList.includes(item)};
       }),
       distinctUntilChanged((prev, next) => prev.item === next.item),
@@ -122,56 +109,44 @@ export class ObservableQueue<T> implements Disposable {
     //</editor-fold>
   }
 
-  //<editor-fold desc="Front">
-  /**
-   * Element at the front of the queue
-   */
-  get front() {
-    return this.items.at(0);
-  }
+  //<editor-fold desc="Top">
+  /** Element at the top of the stack */
+  get top() {return this.items.at(-1);}
 
-  /**
-   * Observable returning the element at the front of the queue
-   */
-  readonly front$: Observable<T | undefined>;
+  /** Observable returning the element at the top of the stack */
+  readonly top$: Observable<T | undefined>;
 
-  /** Observable returning the current front element and whether it was just added */
-  readonly frontDelta$: Observable<ObservableQueueDelta<T>>;
+  /** Observable returning the current top element and whether it was just added */
+  readonly topDelta$: Observable<ObservableStackDelta<T>>;
   //</editor-fold>
 
-  //<editor-fold desc="Back">
-  /**
-   * Element at the back of the queue
-   */
-  get back() {
-    return this.items.at(-1);
-  }
+  //<editor-fold desc="Bottom">
+  /** Element at the bottom of the stack */
+  get bottom() {return this.items.at(0);}
 
-  /**
-   * Observable returning the element at the back of the queue
-   */
-  readonly back$: Observable<T | undefined>;
+  /** Observable returning the element at the bottom of the stack */
+  readonly bottom$: Observable<T | undefined>;
 
-  /** Observable returning the current back element and whether it was just added */
-  readonly backDelta$: Observable<ObservableQueueDelta<T>>;
+  /** Observable returning the current bottom element and whether it was just added */
+  readonly bottomDelta$: Observable<ObservableStackDelta<T>>;
   //</editor-fold>
 
   //<editor-fold desc="Changes">
 
-  /** Emits all updates to the queue */
+  /** Emits all updates to the stack */
   readonly updates$: Observable<T[]>;
 
-  /** Emits for every item that is updated in the list */
-  readonly itemUpdates$: Observable<ObservableQueueItemChange<T>>;
+  /** Emits for every item that is added or removed from the stack */
+  readonly itemUpdates$: Observable<ObservableStackItemChange<T>>;
 
-  /** Emits for every item that is removed from the list */
-  readonly itemRemoved$: Observable<ObservableQueueItem<T>>;
+  /** Emits for every item that is removed from the stack */
+  readonly itemRemoved$: Observable<ObservableStackItem<T>>;
 
-  /** Emits for every item that is added to the list */
-  readonly itemAdded$: Observable<ObservableQueueItem<T>>;
+  /** Emits for every item that is added to the stack */
+  readonly itemAdded$: Observable<ObservableStackItem<T>>;
 
-  /** Emits for every item that is updated in the list, including the changes from an empty list to the current state */
-  readonly itemDelta$: Observable<ObservableQueueItemChange<T>>;
+  /** Emits for every item that is added/removed in the stack, including the changes from an empty stack to the current state */
+  readonly itemDelta$: Observable<ObservableStackItemChange<T>>;
 
   /**
    * Processes changes to individual items
@@ -179,10 +154,15 @@ export class ObservableQueue<T> implements Disposable {
    * @param nextList
    * @private
    */
-  private* processChanges(prevList: T[], nextList: T[]): Generator<ObservableQueueItemChange<T>> {
+  private* processChanges(prevList: T[], nextList: T[]): Generator<ObservableStackItemChange<T>> {
 
-    const oldLookup = arrToLookup(prevList, x => x, (_, i) => i) as Map<T, number[]>;
-    const changes: ObservableQueueItemChange<T>[] = [];
+    const oldLookup = arrToLookup(
+      prevList,
+      x => x,
+      (_, i) => i
+    ) as Map<T, number[]>;
+
+    const changes: ObservableStackItemChange<T>[] = [];
 
     // Determine all additions and moves
     for (let i = 0; i < nextList.length; i++) {
@@ -231,15 +211,15 @@ export class ObservableQueue<T> implements Disposable {
   }
 
   /**
-   * Remove the front element from the queue and return it
+   * Remove the bottom element from the stack and return it
    */
-  dequeue(): T | undefined;
+  removeFromBottom(): T | undefined;
   /**
-   * Remove the front x elements from the queue and return them
+   * Remove the bottom x elements from the stack and return them
    * @param count - The amount of elements to remove
    */
-  dequeue(count: number): T[];
-  dequeue(count?: number): T | T[] | undefined {
+  removeFromBottom(count: number): T[];
+  removeFromBottom(count?: number): T | T[] | undefined {
 
     if (count !== undefined) {
       if (count < 1) return [];
@@ -256,15 +236,15 @@ export class ObservableQueue<T> implements Disposable {
   }
 
   /**
-   * Remove the back element from the queue and return it
+   * Remove the top element from the stack and return it
    */
-  removeFromBack(): T | undefined;
+  pop(): T | undefined;
   /**
-   * Remove the back x elements from the queue and return it
+   * Remove the top x elements from the stack and return it
    * @param count - The amount of elements to remove
    */
-  removeFromBack(count: number): T[];
-  removeFromBack(count?: number): T | T[] | undefined {
+  pop(count: number): T[];
+  pop(count?: number): T | T[] | undefined {
 
     if (count !== undefined) {
       if (count < 1) return [];
@@ -282,45 +262,31 @@ export class ObservableQueue<T> implements Disposable {
   }
 
   /**
-   * Add item to the back of the queue
+   * Add item to the top of the stack
    * @param item - Item to add
    */
-  enqueue(item: T): void;
+  push(item: T): void;
   /**
-   * Add items to the back of the queue
+   * Add items to the top of the stack
    * @param items - Items to add
    */
-  enqueue(...items: T[]): void;
-  enqueue(...items: T[]): void {
-    let list = [...this.items, ...items];
-
-    if (this.maxSize !== undefined && list.length > this.maxSize) {
-      const delta = list.length - this.maxSize;
-      list = list.slice(delta);
-    }
-
-    this.items = list;
+  push(...items: T[]): void;
+  push(...items: T[]): void {
+    this.items = [...this.items, ...items];
   }
 
   /**
-   * Add item to the front of the queue
+   * Add item to the bottom of the stack
    * @param item - Item to add
    */
-  addToFront(item: T): void;
+  addToBottom(item: T): void;
   /**
-   * Add items to the front of the queue
+   * Add items to the bottom of the stack
    * @param items - Items to add
    */
-  addToFront(...items: T[]): void;
-  addToFront(...items: T[]): void {
-    let list = [...items, ...this.items];
-
-    if (this.maxSize !== undefined && list.length > this.maxSize) {
-      const delta = list.length - this.maxSize;
-      list = list.slice(0, -delta);
-    }
-
-    this.items = list;
+  addToBottom(...items: T[]): void;
+  addToBottom(...items: T[]): void {
+    this.items = [...items, ...this.items];
   }
 
   /**
@@ -341,19 +307,6 @@ export class ObservableQueue<T> implements Disposable {
   //</editor-fold>
 
   /**
-   * Change the max size of the queue
-   * @param size - The new max size
-   */
-  setMaxSize(size: number | undefined) {
-    this._maxSize = size;
-
-    if (size === undefined || this.length <= size) return;
-
-    const delta = this.length - size;
-    this.items = this.items.slice(delta);
-  }
-
-  /**
    * Dispose of the Scheduler.
    * This closes all subjects.
    */
@@ -362,20 +315,16 @@ export class ObservableQueue<T> implements Disposable {
   }
 }
 
-export interface ObservableQueueOptions {
-  size?: number | undefined;
-}
-
-export interface ObservableQueueDelta<T> {
-  added: boolean;
+export interface ObservableStackDelta<T> {
   item?: T;
+  added: boolean;
 }
 
-export interface ObservableQueueItem<T> {
+export interface ObservableStackItem<T> {
   item: T;
   index: number;
 }
 
-export interface ObservableQueueItemChange<T> extends ObservableQueueItem<T> {
+export interface ObservableStackItemChange<T> extends ObservableStackItem<T> {
   change: 'added'|'removed';
 }
