@@ -181,12 +181,14 @@ export class ObservableQueue<T> implements Disposable {
    */
   private* processChanges(prevList: T[], nextList: T[]): Generator<ObservableQueueItemChange<T>> {
 
-    const oldLookup = arrToLookup(prevList, x => x, (_, i) => i) as Map<T, number[]>;
+    const oldLookup = arrToLookup(prevList, x => x, (_, i) => i);
     const changes: ObservableQueueItemChange<T>[] = [];
 
     // Determine all additions and moves
     for (let i = 0; i < nextList.length; i++) {
-      const data = nextList[i] as T;
+      const data = nextList[i];
+      if (data == null) continue;
+
       const oldItems = oldLookup.get(data);
 
       if (!oldItems) {
@@ -202,6 +204,7 @@ export class ObservableQueue<T> implements Disposable {
 
     // Emit all removals first
     for (let [data, indices] of oldLookup) {
+      if (data == null) continue;
       for (let index of indices) {
         yield {item: data, index, change: 'removed'};
       }

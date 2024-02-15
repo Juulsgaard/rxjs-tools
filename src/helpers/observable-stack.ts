@@ -160,13 +160,15 @@ export class ObservableStack<T> implements Disposable {
       prevList,
       x => x,
       (_, i) => i
-    ) as Map<T, number[]>;
+    );
 
     const changes: ObservableStackItemChange<T>[] = [];
 
     // Determine all additions and moves
     for (let i = 0; i < nextList.length; i++) {
-      const data = nextList[i] as T;
+      const data = nextList[i];
+      if (data == null) continue;
+
       const oldItems = oldLookup.get(data);
 
       if (!oldItems) {
@@ -181,9 +183,10 @@ export class ObservableStack<T> implements Disposable {
     }
 
     // Emit all removals first
-    for (let [data, indices] of oldLookup) {
+    for (let [oldData, indices] of oldLookup) {
+      if (oldData == null) continue;
       for (let index of indices) {
-        yield {item: data, index, change: 'removed'};
+        yield {item: oldData, index, change: 'removed'};
       }
     }
 

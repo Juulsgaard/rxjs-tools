@@ -4,7 +4,6 @@ import {ILoadingState} from "./loading-state.interface";
 import {EmptyLoadingState} from "./empty-loading-state";
 import {IValueLoadingState} from "./value-loading-state.interface";
 import {LoadingState} from "./loading-state";
-import {isPromise} from "rxjs/internal/util/isPromise";
 import {StaticLoadingState} from "./static-loading-state";
 import {ErrorLoadingState, ValueErrorLoadingState} from "./error-loading-state";
 import {isFunction} from "@juulsgaard/ts-tools";
@@ -32,7 +31,7 @@ export module Loading {
    */
   export function Any<TData>(value: TData): StaticLoadingState<TData>;
   export function Any<TData>(value$: Promise<TData> | Observable<TData> | TData): IValueLoadingState<TData> {
-    if (isObservable(value$) || isPromise(value$)) {
+    if (isObservable(value$) || value$ instanceof Promise) {
       return new LoadingState(value$);
     }
 
