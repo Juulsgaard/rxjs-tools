@@ -1,6 +1,6 @@
 import {BehaviorSubject, lastValueFrom, Observable, ReplaySubject, startWith, Subscribable, Unsubscribable} from "rxjs";
 import {map} from "rxjs/operators";
-import {isObject} from "@juulsgaard/ts-tools";
+import {isObject, isString} from "@juulsgaard/ts-tools";
 import {permanentCache} from "../operators/cache";
 import {CancelledError} from "./cancelled.error";
 import {IValueLoadingState} from "./value-loading-state.interface";
@@ -116,10 +116,13 @@ export class LoadingState<TData> extends IValueLoadingState<TData> {
    * @param error - The thrown error
    * @private
    */
-  private static parseError(error: Error | any): Error {
+  private static parseError(error: Error | unknown): Error {
+    if (error == null) return Error();
     if (error instanceof Error) return error;
+    if (isString(error)) return Error(error);
     if (!isObject(error)) return Error(error.toString());
-    if ('name' in error && 'message' in error) return error as Error;
+    if ('message' in error && isString(error.message)) return Error(error.message);
+    if ('error' in error && isString(error.error)) return Error(error.error);
     return Error(error.toString());
   }
 
