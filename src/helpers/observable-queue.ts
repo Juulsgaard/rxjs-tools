@@ -81,7 +81,7 @@ export class ObservableQueue<T> implements Disposable {
       pairwise(),
       map(([prevList, nextList]) => {
         const item = nextList.at(0);
-        return {item, added: !item ? false : prevList.includes(item)};
+        return {item, added: !item ? false : !prevList.includes(item)};
       }),
       distinctUntilChanged((prev, next) => prev.item === next.item),
       share()
@@ -100,7 +100,7 @@ export class ObservableQueue<T> implements Disposable {
       pairwise(),
       map(([prevList, nextList]) => {
         const item = nextList.at(-1);
-        return {item, added: !item ? false : prevList.includes(item)};
+        return {item, added: !item ? false : !prevList.includes(item)};
       }),
       distinctUntilChanged((prev, next) => prev.item === next.item),
       share()
