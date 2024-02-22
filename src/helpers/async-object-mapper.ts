@@ -3,10 +3,12 @@ import {from, Observable, Subject, Subscription, Unsubscribable} from "rxjs";
 import {AsyncOrSyncVal, AsyncVal, UnwrappedAsyncOrSyncVal, UnwrappedAsyncVal} from "./async-value-mapper";
 import {isSubscribable} from "../util/type-guards";
 
-export type AsyncObject<T extends Record<string, unknown>> = {[K in keyof T]: AsyncVal<T[K]>};
-export type AsyncOrSyncObject<T extends Record<string, unknown>> = {[K in keyof T]: AsyncOrSyncVal<T[K]>};
-export type UnwrappedAsyncObject<T extends AsyncObject<Record<string, unknown>>, TMod = never> = {[K in keyof T]: UnwrappedAsyncVal<T[K], TMod>};
-export type UnwrappedAsyncOrSyncObject<T extends AsyncOrSyncObject<Record<string, unknown>>, TMod = never> = {[K in keyof T]: UnwrappedAsyncOrSyncVal<T[K], TMod>};
+export type AsAsyncObject<T extends Record<string, unknown>> = {[K in keyof T]: AsyncVal<T[K]>};
+export type AsyncObject = Record<string, AsyncVal<unknown>>;
+export type AsAsyncOrSyncObject<T extends Record<string, unknown>> = {[K in keyof T]: AsyncOrSyncVal<T[K]>};
+export type AsyncOrSyncObject = Record<string, AsyncOrSyncVal<unknown>>;
+export type UnwrappedAsyncObject<T extends AsyncObject, TMod = never> = {[K in keyof T]: UnwrappedAsyncVal<T[K], TMod>};
+export type UnwrappedAsyncOrSyncObject<T extends AsyncOrSyncObject, TMod = never> = {[K in keyof T]: UnwrappedAsyncOrSyncVal<T[K], TMod>};
 
 abstract class BaseAsyncObjectMapper<T extends Record<string, unknown>> implements Disposable {
 
@@ -17,7 +19,7 @@ abstract class BaseAsyncObjectMapper<T extends Record<string, unknown>> implemen
 
   private current?: Map<AsyncVal<unknown>|string, ValueCell<unknown>>;
 
-  update(values: AsyncOrSyncObject<T>): boolean {
+  update(values: AsAsyncOrSyncObject<T>): boolean {
     if (this.disposed) return false;
 
     this.current?.forEach(x => x.reset());

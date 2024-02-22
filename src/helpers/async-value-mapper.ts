@@ -1,44 +1,15 @@
 import {Disposable} from "@juulsgaard/ts-tools";
-import {from, Observable, Observer, Subject, Subscribable, Unsubscribable} from "rxjs";
+import {from, Observable, Subject, Subscribable, Unsubscribable} from "rxjs";
 import {isSubscribable} from "../util/type-guards";
 
 export type AsyncVal<T> = Subscribable<T> | Observable<T> | Promise<T>;
 export type AsyncOrSyncVal<T> = AsyncVal<T> | T;
 
-// TODO: Switch back to clean implementation when Angular templates can handle it
-// export type UnwrappedAsyncVal<T extends AsyncVal<unknown>, TMod = never> =
-//   T extends Subscribable<infer U> ? U | TMod :
-//     T extends Observable<infer U> ? U | TMod :
-//       T extends Promise<infer U> ? U | TMod :
-//         never;
-
-// TODO: Switch back to clean implementation when Angular templates can handle it
-// type UnwrappedAsyncOrSyncVal<T, TMod = never> =
-//   T extends Subscribable<infer U> ? U | TMod :
-//     T extends Observable<infer U> ? U | TMod :
-//       T extends Promise<infer U> ? U | TMod :
-//         T;
-
 export type UnwrappedAsyncVal<T extends AsyncVal<unknown>, TMod = never> =
-  UnwrapSubscribable<T, UnwrapObservable<T, UnwrapPromise<T, never, TMod>, TMod>, TMod>;
+  T extends AsyncVal<infer U> ? U | TMod : never;
 
 export type UnwrappedAsyncOrSyncVal<T, TMod = never> =
-  UnwrapSubscribable<T, UnwrapObservable<T, UnwrapPromise<T, T, TMod>, TMod>, TMod>;
-
-//<editor-fold desc="Temp Unwrap Helpers">
-type UnwrapSubscribable<T, TElse = never, TMod = never> =
-  T extends Subscribable<unknown> ?
-    T["subscribe"] extends (observer: infer U) => Unsubscribable ?
-      U extends Partial<Observer<any>> ?
-        U["next"] extends ((value: infer O) => void) | undefined ? O | TMod
-          : TElse
-        : TElse
-      : TElse
-    : TElse;
-
-type UnwrapObservable<T, TElse = never, TMod = never> = T extends Observable<infer U> ? U | TMod : TElse;
-type UnwrapPromise<T, TElse = never, TMod = never> = T extends Promise<infer U> ? U | TMod : TElse;
-//</editor-fold>
+  T extends AsyncVal<infer U> ? U | TMod : T;
 
 abstract class BaseAsyncValueMapper<T> implements Disposable {
 

@@ -3,10 +3,12 @@ import {from, Observable, Subject, Subscription, Unsubscribable} from "rxjs";
 import {AsyncOrSyncVal, AsyncVal, UnwrappedAsyncOrSyncVal, UnwrappedAsyncVal} from "./async-value-mapper";
 import {isSubscribable} from "../util/type-guards";
 
-export type AsyncTuple<T extends unknown[]> = {[K in keyof T]: AsyncVal<T[K]>};
-export type AsyncOrSyncTuple<T extends unknown[]> = {[K in keyof T]: AsyncOrSyncVal<T[K]>};
-export type UnwrappedAsyncTuple<T extends AsyncTuple<unknown[]>, TMod = never> = {[K in keyof T]: UnwrappedAsyncVal<T[K], TMod>};
-export type UnwrappedAsyncOrSyncTuple<T extends AsyncOrSyncTuple<unknown[]>, TMod = never> = {[K in keyof T]: UnwrappedAsyncOrSyncVal<T[K], TMod>};
+export type AsAsyncTuple<T extends unknown[]> = {[K in keyof T]: AsyncVal<T[K]>};
+export type AsyncTuple = AsyncVal<unknown>[];
+export type AsAsyncOrSyncTuple<T extends unknown[]> = {[K in keyof T]: AsyncOrSyncVal<T[K]>};
+export type AsyncOrSyncTuple = AsyncOrSyncVal<unknown>[];
+export type UnwrappedAsyncTuple<T extends AsyncTuple, TMod = never> = {[K in keyof T]: UnwrappedAsyncVal<T[K], TMod>};
+export type UnwrappedAsyncOrSyncTuple<T extends AsyncOrSyncTuple, TMod = never> = {[K in keyof T]: UnwrappedAsyncOrSyncVal<T[K], TMod>};
 
 abstract class BaseAsyncTupleMapper<T extends unknown[]> implements Disposable {
 
@@ -22,7 +24,7 @@ abstract class BaseAsyncTupleMapper<T extends unknown[]> implements Disposable {
    * @param values
    * @returns emitted - True is a value was synchronously emitted
    */
-  update(values: AsyncOrSyncTuple<T>): boolean {
+  update(values: AsAsyncOrSyncTuple<T>): boolean {
     if (this.disposed) return false;
 
     this.current?.forEach(x => x.reset());
