@@ -8,9 +8,9 @@ export abstract class ILoadingState implements Subscribable<boolean> {
   /** Indicates the loading state of the command */
   readonly abstract loading$: Observable<boolean>;
   /** Emits an error if one occurs */
-  readonly abstract error$: Observable<any>;
+  readonly abstract error$: Observable<Error>;
   /** Indicates if the actions has failed */
-  readonly abstract failed$: Observable<any>;
+  readonly abstract failed$: Observable<boolean>;
   /** Indicates the loading state of the command */
   readonly abstract loading: boolean;
   /** Indicates if the action was async or not */

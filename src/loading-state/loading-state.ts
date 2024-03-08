@@ -24,7 +24,7 @@ export class LoadingState<TData> extends IValueLoadingState<TData> {
     return this._loading$.value
   }
   /** @inheritDoc */
-  error$: Observable<any>;
+  error$: Observable<Error>;
 
   /** @inheritDoc */
   failed$: Observable<boolean>;
@@ -55,10 +55,10 @@ export class LoadingState<TData> extends IValueLoadingState<TData> {
     this.loading$ = this._loading$.asObservable();
 
     // Filter out errors
-    this.error$ = new Observable(subscriber => {
+    this.error$ = new Observable<Error>(subscriber => {
       this.result$.subscribe({
         error: err => {
-          subscriber.next(err);
+          subscriber.next(LoadingState.parseError(err));
           subscriber.complete();
         },
         complete: () => subscriber.complete()
