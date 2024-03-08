@@ -1,7 +1,8 @@
-import {BehaviorSubject, Observable, of, switchMap} from "rxjs";
+import {BehaviorSubject, Observable, of, Subscribable, switchMap} from "rxjs";
 import {Future} from "./future";
 import {FutureConfig} from "./future-config";
 import {IValueLoadingState} from "../loading-state/value-loading-state.interface";
+import {parseError} from "@juulsgaard/ts-tools";
 
 /**
  * Create a Future
@@ -62,7 +63,7 @@ function futureFromRequest<T>(req: Observable<T>): Future<T> {
   req.subscribe({
     next: x => val$.next(x),
     error: err => {
-      err$.next(err);
+      err$.next(parseError(err));
       err$.complete();
       load$.next(false);
       load$.complete();
@@ -91,11 +92,48 @@ function futureFromLoadingState<T>(loading: IValueLoadingState<T>): Future<T> {
   );
 }
 
+/**
+ * Create a Future from a Observable / Subscribable.
+ * Will resolve on the first emitted value
+ * @param value$
+ * @constructor
+ */
+function futureFromObservable<T>(value$: Subscribable<T>): Future<T> {
+  const val$ = new BehaviorSubject<T | undefined>(undefined);
+  const err$ = new BehaviorSubject<Error | undefined>(undefined);
+  const load$ = new BehaviorSubject(true);
+  const sub = value$.subscribe({
+    next: x => {
+      sub.unsubscribe();
+      val$.next(x);
+      val$.complete();
+      err$.complete();
+      load$.next(false);
+      load$.complete();
+    },
+    error: err => {
+      err$.next(parseError(err));
+      err$.complete();
+      load$.next(false);
+      load$.complete();
+      val$.complete();
+    },
+    complete: () => {
+      val$.complete();
+      err$.complete();
+      load$.next(false);
+      load$.complete();
+    }
+  });
+  return new Future<T>(val$, load$, err$);
+}
+
 type FutureConstructor = typeof createFuture & {
   readonly configure: typeof configureFuture;
   readonly empty: typeof emptyFuture;
   readonly fromRequest: typeof futureFromRequest;
   readonly fromLoadingState: typeof futureFromLoadingState;
+  readonly fromObservable: typeof futureFromObservable;
 };
 
 type Mutable = {
@@ -108,5 +146,6 @@ constructor.configure = configureFuture;
 constructor.empty = emptyFuture;
 constructor.fromRequest = futureFromRequest;
 constructor.fromLoadingState = futureFromLoadingState;
+constructor.fromObservable = futureFromObservable;
 
 export const future: FutureConstructor = constructor;
