@@ -1,6 +1,7 @@
 
 export * from './future/future-types';
 export * from './future/future';
+export * from './future/future-constructors';
 
 export * from './helpers/observable-queue';
 export * from './helpers/observable-set';
