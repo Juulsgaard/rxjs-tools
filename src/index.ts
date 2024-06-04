@@ -6,6 +6,7 @@ export * from './future/future-constructors';
 export * from './helpers/observable-queue';
 export * from './helpers/observable-set';
 export * from './helpers/observable-stack';
+export * from './helpers/observable-map';
 export * from './helpers/repetition';
 export * from './helpers/async-value-mapper';
 export * from './helpers/async-tuple-mapper';
