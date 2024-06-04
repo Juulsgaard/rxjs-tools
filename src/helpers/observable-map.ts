@@ -2,20 +2,33 @@ import {
   BehaviorSubject, concatMap, from, Observable, Observer, pairwise, share, skip, Subscribable, Unsubscribable
 } from "rxjs";
 import {distinctUntilChanged, filter, map} from "rxjs/operators";
+import {cache} from "../operators/cache";
 
 export class ObservableMap<TKey, TVal> implements ReadonlyObservableMap<TKey, TVal> {
 
-  private get _map() {return this._map$.value};
+  private get _map() {
+    return this._map$.value
+  };
+
   private _map$: BehaviorSubject<ReadonlyMap<TKey, TVal>>;
 
   readonly value$: Observable<ReadonlyMap<TKey, TVal>>;
-  get value() {return this._map}
+
+  get value() {
+    return this._map
+  }
 
   readonly size$: Observable<number>;
-  get size() {return this._map.size}
+
+  get size() {
+    return this._map.size
+  }
 
   readonly empty$: Observable<boolean>;
-  get empty() {return this.size <= 0}
+
+  get empty() {
+    return this.size <= 0
+  }
 
   constructor(values: ReadonlyMap<TKey, TVal>) {
     this._map$ = new BehaviorSubject<ReadonlyMap<TKey, TVal>>(new Map(values));
@@ -68,7 +81,7 @@ export class ObservableMap<TKey, TVal> implements ReadonlyObservableMap<TKey, TV
   }
 
   //<editor-fold desc="Actions">
-  filter(whitelist: ReadonlyArray<TKey>|ReadonlySet<TKey>|undefined): boolean {
+  filter(whitelist: ReadonlyArray<TKey> | ReadonlySet<TKey> | undefined): boolean {
     const length = whitelist && 'size' in whitelist ? whitelist.size : whitelist?.length;
 
     if (!length) {
@@ -138,7 +151,7 @@ export class ObservableMap<TKey, TVal> implements ReadonlyObservableMap<TKey, TV
    * @param state - A forced state (`true` = always add, `false` = always delete)
    * @returns The applied change (`true` = item added, `false` = item removed, `undefined` = nothing changed)
    */
-  toggle(key: TKey, value: TVal, state?: boolean): boolean|undefined {
+  toggle(key: TKey, value: TVal, state?: boolean): boolean | undefined {
 
     if (this._map.has(key)) {
       if (state === true) return undefined;
@@ -159,8 +172,24 @@ export class ObservableMap<TKey, TVal> implements ReadonlyObservableMap<TKey, TV
     return this._map.has(key);
   }
 
-  get(key: TKey): TVal|undefined {
+  has$(key: TKey): Observable<boolean> {
+    return this.value$.pipe(
+      map(x => x.has(key)),
+      distinctUntilChanged(),
+      cache()
+    );
+  }
+
+  get(key: TKey): TVal | undefined {
     return this._map.get(key);
+  }
+
+  get$(key: TKey): Observable<TVal | undefined> {
+    return this.value$.pipe(
+      map(x => x.get(key)),
+      distinctUntilChanged(),
+      cache()
+    );
   }
 
   modify(modify: (map: Map<TKey, TVal>) => void) {
@@ -168,6 +197,7 @@ export class ObservableMap<TKey, TVal> implements ReadonlyObservableMap<TKey, TV
     modify(map);
     this._map$.next(map);
   }
+
   //</editor-fold>
 
   //<editor-fold desc="Changes">
@@ -190,7 +220,10 @@ export class ObservableMap<TKey, TVal> implements ReadonlyObservableMap<TKey, TV
    * Processes changes to individual items
    * @private
    */
-  private *processChanges(prevMap: ReadonlyMap<TKey, TVal>, nextMap: ReadonlyMap<TKey, TVal>): Generator<ObservableMapItemChange<TKey, TVal>> {
+  private* processChanges(
+    prevMap: ReadonlyMap<TKey, TVal>,
+    nextMap: ReadonlyMap<TKey, TVal>
+  ): Generator<ObservableMapItemChange<TKey, TVal>> {
 
     const old = new Map(prevMap);
 
@@ -207,6 +240,7 @@ export class ObservableMap<TKey, TVal> implements ReadonlyObservableMap<TKey, TV
       yield {key, value, change: 'removed'};
     }
   }
+
   //</editor-fold>
 }
 
@@ -215,8 +249,12 @@ export interface ReadonlyObservableMap<TKey, TVal> extends Iterable<[TKey, TVal]
   readonly size$: Observable<number>;
   readonly value: ReadonlyMap<TKey, TVal>;
   readonly value$: Observable<ReadonlyMap<TKey, TVal>>;
+
   has(key: TKey): boolean;
-  get(key: TKey): TVal|undefined;
+  has$(key: TKey): Observable<boolean>;
+
+  get(key: TKey): TVal | undefined;
+  get$(key: TKey): Observable<TVal | undefined>;
 }
 
 export interface ObservableMapItem<TKey, TVal> {
@@ -224,6 +262,6 @@ export interface ObservableMapItem<TKey, TVal> {
   value: TVal;
 }
 
-export interface ObservableMapItemChange<TKey, TVal> extends ObservableMapItem<TKey, TVal>{
-  change: 'added'|'removed';
+export interface ObservableMapItemChange<TKey, TVal> extends ObservableMapItem<TKey, TVal> {
+  change: 'added' | 'removed';
 }

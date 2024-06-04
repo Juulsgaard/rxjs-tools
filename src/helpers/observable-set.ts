@@ -2,6 +2,7 @@ import {
   BehaviorSubject, concatMap, from, Observable, Observer, pairwise, share, skip, Subscribable, Unsubscribable
 } from "rxjs";
 import {distinctUntilChanged, filter, map} from "rxjs/operators";
+import {cache} from "../operators/cache";
 
 export class ObservableSet<T> implements ReadonlyObservableSet<T> {
 
@@ -176,6 +177,14 @@ export class ObservableSet<T> implements ReadonlyObservableSet<T> {
     return this._set.has(value);
   }
 
+  has$(value: T): Observable<boolean> {
+    return this.value$.pipe(
+      map(x => x.has(value)),
+      distinctUntilChanged(),
+      cache()
+    );
+  }
+
   modify(modify: (set: Set<T>) => void) {
     const set = this.getCopy();
     modify(set);
@@ -231,6 +240,7 @@ export interface ReadonlyObservableSet<T> extends Iterable<T>, Subscribable<Read
   readonly array: ReadonlyArray<T>;
   readonly array$: Observable<ReadonlyArray<T>>;
   has(value: T): boolean;
+  has$(value: T): Observable<boolean>;
 }
 
 export interface ObservableSetItemChange<T> {
