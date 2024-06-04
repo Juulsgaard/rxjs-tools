@@ -30,7 +30,7 @@ export class ObservableMap<TKey, TVal> implements ReadonlyObservableMap<TKey, TV
     return this.size <= 0
   }
 
-  constructor(values: ReadonlyMap<TKey, TVal>) {
+  constructor(values?: ReadonlyMap<TKey, TVal>) {
     this._map$ = new BehaviorSubject<ReadonlyMap<TKey, TVal>>(new Map(values));
     this.value$ = this._map$.asObservable();
 
