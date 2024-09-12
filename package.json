@@ -1,7 +1,8 @@
 {
   "name": "@juulsgaard/rxjs-tools",
-  "version": "1.7.4",
+  "version": "1.7.5",
   "description": "Tooling for working with RXJS",
+  "homepage": "https://juulsgaard.github.io/rxjs-tools/",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
@@ -27,6 +28,7 @@
     "rollup-plugin-esbuild": "^6.1.1",
     "rxjs": "7.8.1",
     "ts-jest": "^29.2.3",
+    "typedoc": "^0.26.7",
     "typescript": "~5.5.4"
   },
   "scripts": {

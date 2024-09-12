@@ -3,10 +3,15 @@ import {distinctUntilChanged, filter, map} from "rxjs/operators";
 import {cache, persistentCache} from "../operators/cache";
 import {arrToLookup, Disposable} from "@juulsgaard/ts-tools";
 
+/**
+ * An observable FIFO queue
+ * @category Observable Collections
+ */
 export class ObservableQueue<T> implements Disposable {
 
   private readonly _items$ = new BehaviorSubject<T[]>([]);
-  /** An observable containing the items of the queue */
+
+  /** An observable emitting the items of the queue */
   readonly items$ = this._items$.asObservable();
 
   /** A list of items in the queue */
@@ -18,20 +23,26 @@ export class ObservableQueue<T> implements Disposable {
     this._items$.next(items)
   }
 
+  /** The number of items in the queue */
   get length() {
     return this.items.length;
   }
 
+  /** An observable emitting the number of items in the queue */
   readonly length$: Observable<number>;
 
+  /** True if there are no items in the queue */
   get empty() {
     return this.items.length <= 0;
   }
 
+  /** An observable emitting true if there are no items in the queue */
   readonly empty$: Observable<boolean>;
 
   private _maxSize: number | undefined;
-  get maxSize() {
+
+  /** The max size of the queue */
+  get maxSize(): number|undefined {
     return this._maxSize
   };
 
@@ -357,7 +368,7 @@ export class ObservableQueue<T> implements Disposable {
   }
 
   /**
-   * Dispose of the Scheduler.
+   * Dispose of the Queue.
    * This closes all subjects.
    */
   dispose() {
@@ -365,20 +376,36 @@ export class ObservableQueue<T> implements Disposable {
   }
 }
 
+/**
+ * Options for creating a Queue
+ * @category Observable Collections
+ */
 export interface ObservableQueueOptions {
   size?: number | undefined;
 }
 
+/**
+ * Data indicating the change in state for a location in the Queue
+ * @category Observable Collections
+ */
 export interface ObservableQueueDelta<T> {
   added: boolean;
   item?: T;
 }
 
+/**
+ * State for an item in the queue
+ * @category Observable Collections
+ */
 export interface ObservableQueueItem<T> {
   item: T;
   index: number;
 }
 
+/**
+ * Data indicating the change in state for an item in the Queue
+ * @category Observable Collections
+ */
 export interface ObservableQueueItemChange<T> extends ObservableQueueItem<T> {
   change: 'added'|'removed';
 }

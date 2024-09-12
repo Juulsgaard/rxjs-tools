@@ -11,3 +11,5 @@ Tooling for working with RXJS
 This library contains tools for working with RXJS.
 
 It includes utility classes as well helpers and custom operators.
+
+Documentation of all the types, tools and classes can be found in the [Documentation](https://juulsgaard.github.io/rxjs-tools/)

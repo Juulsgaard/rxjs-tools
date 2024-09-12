@@ -1,3 +1,11 @@
+/**
+ * @packageDocumentation
+ * @categoryDescription Future
+ * A tool for handling asynchronous data with a recurring loading or error state
+ *
+ * @categoryDescription Observable Collections
+ * Data collections with observable values
+ */
 
 export * from './future/future-types';
 export * from './future/future';

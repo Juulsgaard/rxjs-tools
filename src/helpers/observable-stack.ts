@@ -3,6 +3,10 @@ import {distinctUntilChanged, filter, map} from "rxjs/operators";
 import {cache, persistentCache} from "../operators/cache";
 import {arrToLookup, Disposable} from "@juulsgaard/ts-tools";
 
+/**
+ * An observable FILO stack
+ * @category Observable Collections
+ */
 export class ObservableStack<T> implements Disposable {
 
   private readonly _items$ = new BehaviorSubject<T[]>([]);
@@ -18,10 +22,14 @@ export class ObservableStack<T> implements Disposable {
     this._items$.next(items)
   }
 
+  /** The number of items in the stack */
   get length() {return this.items.length;}
+  /** An observable emitting the number of items in the stack */
   readonly length$: Observable<number>;
 
+  /** True if there are no items in the stack */
   get empty() {return this.items.length <= 0;}
+  /** An observable emitting true if there are no items in the stack */
   readonly empty$: Observable<boolean>;
 
   constructor() {
@@ -318,16 +326,28 @@ export class ObservableStack<T> implements Disposable {
   }
 }
 
+/**
+ * Data indicating the change in state for a location in the Stack
+ * @category Observable Collections
+ */
 export interface ObservableStackDelta<T> {
   item?: T;
   added: boolean;
 }
 
+/**
+ * State for an item in the Stack
+ * @category Observable Collections
+ */
 export interface ObservableStackItem<T> {
   item: T;
   index: number;
 }
 
+/**
+ * Data indicating the change in state for an item in the Stack
+ * @category Observable Collections
+ */
 export interface ObservableStackItemChange<T> extends ObservableStackItem<T> {
   change: 'added'|'removed';
 }

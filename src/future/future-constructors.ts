@@ -10,6 +10,7 @@ import {parseError} from "@juulsgaard/ts-tools";
  * @param loading$ - The loading state
  * @param error$ - The error state
  * @constructor
+ * @category Future
  */
 function createFuture<T>(
   value$: Observable<T | undefined>,
@@ -29,6 +30,7 @@ function createFuture<T>(
  * @param loading$ - The loading state
  * @param error$ - The error state
  * @constructor
+ * @category Future
  */
 function configureFuture<T>(
   value$: Observable<T>,
@@ -46,6 +48,7 @@ function configureFuture<T>(
 /**
  * Create an empty Future
  * @constructor
+ * @category Future
  */
 function emptyFuture(): Future<any> {
   return new Future<any>(of(undefined), of(false), of(false));
@@ -55,6 +58,7 @@ function emptyFuture(): Future<any> {
  * Create a Future from an Observable
  * @param req
  * @constructor
+ * @category Future
  */
 function futureFromRequest<T>(req: Observable<T>): Future<T> {
   const val$ = new BehaviorSubject<T | undefined>(undefined);
@@ -83,6 +87,7 @@ function futureFromRequest<T>(req: Observable<T>): Future<T> {
  * Create a Future from a LoadingState
  * @param loading
  * @constructor
+ * @category Future
  */
 function futureFromLoadingState<T>(loading: IValueLoadingState<T>): Future<T> {
   return new Future<T>(
@@ -97,6 +102,7 @@ function futureFromLoadingState<T>(loading: IValueLoadingState<T>): Future<T> {
  * Will resolve on the first emitted value
  * @param value$
  * @constructor
+ * @category Future
  */
 function futureFromObservable<T>(value$: Subscribable<T>): Future<T> {
   const val$ = new BehaviorSubject<T | undefined>(undefined);
@@ -128,6 +134,7 @@ function futureFromObservable<T>(value$: Subscribable<T>): Future<T> {
   return new Future<T>(val$, load$, err$);
 }
 
+/** All available Future constructors */
 type FutureConstructor = typeof createFuture & {
   readonly configure: typeof configureFuture;
   readonly empty: typeof emptyFuture;
@@ -148,4 +155,8 @@ constructor.fromRequest = futureFromRequest;
 constructor.fromLoadingState = futureFromLoadingState;
 constructor.fromObservable = futureFromObservable;
 
+/**
+ * Create a Future
+ * @category Future
+ */
 export const future: FutureConstructor = constructor;

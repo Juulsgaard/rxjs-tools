@@ -2,6 +2,10 @@ import {Observable} from "rxjs";
 import {distinctUntilChanged, map} from "rxjs/operators";
 import {Future} from "./future";
 
+/**
+ * A config for building advanced futures
+ * @category Future
+ */
 export class FutureConfig<T, TOut> {
 
   private onLoad?: () => void;

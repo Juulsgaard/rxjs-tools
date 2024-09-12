@@ -5,6 +5,11 @@ import {distinctUntilChanged, filter, first, map} from "rxjs/operators";
 import {FutureEmpty, FutureError, FutureLoading, FutureUnion, FutureValue} from "./future-types";
 import {cache} from "../operators/cache";
 
+/**
+ * A class for handling dynamic values and tracking an error / loading state.
+ * Unlike a LoadingState this structure handles values that change, and can re-enter the loading state.
+ * @category Future
+ */
 export class Future<T> implements Subscribable<FutureUnion<T>> {
 
   /** The state of the Future */
