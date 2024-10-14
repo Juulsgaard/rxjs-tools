@@ -11,6 +11,7 @@ export default [
 			dir: 'dist',
 			format: "esm",
 			preserveModules: true,
+			entryFileNames: '[name].mjs',
 		},
 		plugins: [esbuild()]
 	},
