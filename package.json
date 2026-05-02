@@ -7,7 +7,10 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "sideEffects": false,
-  "repository": "git@github.com:Juulsgaard/rxjs-tools.git",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Juulsgaard/rxjs-tools.git"
+  },
   "author": "Frederik Sørensen",
   "license": "MIT",
   "files": [
